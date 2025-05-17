@@ -638,7 +638,7 @@
         const resultsScreen = document.getElementById('results-screen');
         const testsList = document.getElementById('tests-list');
         const questionText = document.getElementById('question-text');
-        const optionsContainer = document.getElementById('options-container');
+        const optionsContainer = document.getElementById('answers');
         const currentQuestionElement = document.getElementById('current-question');
         const totalQuestionsElement = document.getElementById('total-questions');
         const totalQuestionsResultElement = document.getElementById('total-questions-result');
@@ -646,7 +646,7 @@
         const resultMessageElement = document.getElementById('result-message');
         const resultPercentageElement = document.querySelector('.result-percentage');
         const resultCircleElement = document.querySelector('.result-circle');
-        const progressBar = document.getElementById('quiz-progress-bar');
+        const progressBar = document.getElementById('progress-bar');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const reviewBtn = document.getElementById('review-btn');
@@ -972,6 +972,7 @@
 
         // Start a test
         function startTest(testId) {
+            console.log('Starting test with ID:', testId);
             currentTest = tests.find(test => test.id == testId);
             
             if (!currentTest) {
@@ -984,13 +985,14 @@
             userAnswers = new Array(currentTest.questions.length).fill(null);
             
             // Update UI
-            totalQuestionsElement.textContent = currentTest.questions.length;
+            document.getElementById('total-questions').textContent = currentTest.questions.length;
+            document.getElementById('quiz-title').textContent = currentTest.name;
             
             // Show first question
             showQuestion(0);
             
             // Show quiz screen
-            showScreen(quizScreen);
+            showScreen(document.getElementById('quiz-screen'));
             
             // Start timer
             startTime = Date.now();
@@ -1091,7 +1093,7 @@
                 const minutes = Math.floor(elapsedSeconds / 60);
                 const seconds = elapsedSeconds % 60;
                 
-                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
 
@@ -1132,30 +1134,32 @@
 
         // Show test results
         function showResults(score) {
-            correctAnswersElement.textContent = score.correct;
-            totalQuestionsResultElement.textContent = score.total;
-            resultPercentageElement.textContent = `${Math.round(score.percentage)}%`;
-            resultCircleElement.style.setProperty('--percentage', `${score.percentage}%`);
+            document.getElementById('correct-answers').textContent = score.correct;
+            document.getElementById('total-questions-result').textContent = score.total;
+            document.querySelector('.result-percentage').textContent = `${Math.round(score.percentage)}%`;
+            document.querySelector('.result-circle').style.setProperty('--percentage', `${score.percentage}%`);
             
             // Set result message based on score
+            const resultMessage = document.getElementById('result-message');
             if (score.percentage >= 90) {
-                resultMessageElement.textContent = 'Excellent! You did great!';
+                resultMessage.textContent = 'Excellent! You did great!';
             } else if (score.percentage >= 70) {
-                resultMessageElement.textContent = 'Good job! Well done!';
+                resultMessage.textContent = 'Good job! Well done!';
             } else if (score.percentage >= 50) {
-                resultMessageElement.textContent = 'Not bad, but you can do better!';
+                resultMessage.textContent = 'Not bad, but you can do better!';
             } else {
-                resultMessageElement.textContent = 'You need more practice!';
+                resultMessage.textContent = 'You need more practice!';
             }
             
-            showScreen(resultsScreen);
+            showScreen(document.getElementById('results-screen'));
         }
 
         // Show a specific screen
         function showScreen(screen) {
-            homeScreen.style.display = 'none';
-            quizScreen.style.display = 'none';
-            resultsScreen.style.display = 'none';
+            console.log('Showing screen:', screen.id);
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('quiz-screen').style.display = 'none';
+            document.getElementById('results-screen').style.display = 'none';
             
             screen.style.display = 'block';
         }
