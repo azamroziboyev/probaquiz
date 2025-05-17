@@ -1007,21 +1007,23 @@
             currentQuestionIndex = index;
             
             // Update UI elements
-            currentQuestionElement.textContent = index + 1;
-            totalQuestionsElement.textContent = currentTest.questions.length;
+            document.getElementById('current-question').textContent = index + 1;
+            document.getElementById('total-questions').textContent = currentTest.questions.length;
+            document.getElementById('quiz-title').textContent = currentTest.name;
             
             // Update progress bar
             const progress = ((index + 1) / currentTest.questions.length) * 100;
-            progressBar.style.width = `${progress}%`;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
             
             // Get current question
             const question = currentTest.questions[index];
             
             // Update question text (handle both formats: question.question or question.text)
-            questionText.textContent = question.question || question.text || `Question ${index + 1}`;
+            document.getElementById('question-text').textContent = question.question || question.text || `Question ${index + 1}`;
             
             // Clear previous options
-            optionsContainer.innerHTML = '';
+            const answersContainer = document.getElementById('answers');
+            answersContainer.innerHTML = '';
             
             // Add options
             if (question.options && Array.isArray(question.options)) {
@@ -1039,20 +1041,24 @@
                         selectOption(optionIndex);
                     });
                     
-                    optionsContainer.appendChild(optionButton);
+                    answersContainer.appendChild(optionButton);
                 });
             } else {
                 // Handle case where options are missing
                 const noOptionsMessage = document.createElement('div');
                 noOptionsMessage.className = 'alert alert-warning';
                 noOptionsMessage.textContent = 'No options available for this question.';
-                optionsContainer.appendChild(noOptionsMessage);
+                answersContainer.appendChild(noOptionsMessage);
             }
             
             // Update navigation buttons
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const finishBtn = document.getElementById('finish-btn');
+            
             prevBtn.disabled = index === 0;
-            nextBtn.style.display = index < currentTest.questions.length - 1 ? 'block' : 'none';
-            finishBtn.style.display = index === currentTest.questions.length - 1 ? 'block' : 'none';
+            nextBtn.style.display = index < currentTest.questions.length - 1 ? 'inline-block' : 'none';
+            finishBtn.style.display = index === currentTest.questions.length - 1 ? 'inline-block' : 'none';
         }
         
         // Select an option for the current question
@@ -1067,6 +1073,13 @@
                     button.classList.remove('selected');
                 }
             });
+            
+            // Automatically move to next question after a short delay
+            if (currentQuestionIndex < currentTest.questions.length - 1) {
+                setTimeout(() => {
+                    showQuestion(currentQuestionIndex + 1);
+                }, 500);
+            }
         }
 
         // Start the timer
@@ -1147,26 +1160,33 @@
             screen.style.display = 'block';
         }
 
-        // Event listeners
-        prevBtn.addEventListener('click', () => {
-            showQuestion(currentQuestionIndex - 1);
-        });
-
-        nextBtn.addEventListener('click', () => {
-            if (currentQuestionIndex === currentTest.questions.length - 1) {
+        // Add event listeners after DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Event listeners for navigation buttons
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                showQuestion(currentQuestionIndex - 1);
+            });
+            
+            document.getElementById('next-btn').addEventListener('click', () => {
+                if (currentQuestionIndex === currentTest.questions.length - 1) {
+                    submitTest();
+                } else {
+                    showQuestion(currentQuestionIndex + 1);
+                }
+            });
+            
+            document.getElementById('finish-btn').addEventListener('click', () => {
                 submitTest();
-            } else {
-                showQuestion(currentQuestionIndex + 1);
-            }
-        });
-
-        reviewBtn.addEventListener('click', () => {
-            // TODO: Implement review functionality
-            alert('Review functionality will be implemented soon!');
-        });
-
-        homeBtn.addEventListener('click', () => {
-            showScreen(homeScreen);
+            });
+            
+            document.getElementById('review-btn').addEventListener('click', () => {
+                showScreen(document.getElementById('quiz-screen'));
+                showQuestion(0);
+            });
+            
+            document.getElementById('home-btn').addEventListener('click', () => {
+                showScreen(document.getElementById('home-screen'));
+            });
         });
 
         // Initialize the app when the document is loaded
