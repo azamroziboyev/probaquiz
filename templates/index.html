@@ -929,9 +929,41 @@
 
         // Theme toggle functionality
         function initializeTheme() {
+            console.log('Initializing theme...');
             const themeToggleBtn = document.getElementById('theme-toggle');
-            const lightIcon = document.getElementById('light-icon');
-            const darkIcon = document.getElementById('dark-icon');
+            
+            if (!themeToggleBtn) {
+                console.error('Theme toggle button not found!');
+                return;
+            }
+            
+            // Create icons if they don't exist
+            let lightIcon = document.getElementById('light-icon');
+            let darkIcon = document.getElementById('dark-icon');
+            
+            if (!lightIcon || !darkIcon) {
+                console.log('Creating theme icons...');
+                // Clear the button content
+                themeToggleBtn.innerHTML = '';
+                
+                // Create light icon
+                lightIcon = document.createElement('span');
+                lightIcon.id = 'light-icon';
+                lightIcon.innerHTML = '☀️';
+                lightIcon.style.fontSize = '1.2rem';
+                
+                // Create dark icon
+                darkIcon = document.createElement('span');
+                darkIcon.id = 'dark-icon';
+                darkIcon.innerHTML = '🌙';
+                darkIcon.style.fontSize = '1.2rem';
+                darkIcon.style.display = 'none';
+                
+                // Add icons to button
+                themeToggleBtn.appendChild(lightIcon);
+                themeToggleBtn.appendChild(darkIcon);
+            }
+            
             const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
             
             // Check if Telegram has a color scheme preference
@@ -945,26 +977,36 @@
                 initialTheme = 'dark';
             }
             
+            console.log('Initial theme:', initialTheme);
+            
             // Set initial theme
             if (initialTheme === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
-                lightIcon.style.display = 'none';
-                darkIcon.style.display = 'block';
+                if (lightIcon) lightIcon.style.display = 'none';
+                if (darkIcon) darkIcon.style.display = 'block';
             }
             
             // Add event listener to theme toggle button
             themeToggleBtn.addEventListener('click', () => {
+                console.log('Theme toggle clicked');
                 const currentTheme = document.body.getAttribute('data-theme');
+                
                 if (currentTheme === 'dark') {
+                    // Switch to light theme
                     document.body.removeAttribute('data-theme');
-                    lightIcon.style.display = 'block';
-                    darkIcon.style.display = 'none';
+                    if (lightIcon) lightIcon.style.display = 'block';
+                    if (darkIcon) darkIcon.style.display = 'none';
+                    console.log('Switched to light theme');
                 } else {
+                    // Switch to dark theme
                     document.body.setAttribute('data-theme', 'dark');
-                    lightIcon.style.display = 'none';
-                    darkIcon.style.display = 'block';
+                    if (lightIcon) lightIcon.style.display = 'none';
+                    if (darkIcon) darkIcon.style.display = 'block';
+                    console.log('Switched to dark theme');
                 }
             });
+            
+            console.log('Theme initialization complete');
         }
 
         // Render tests list with enhanced UI
@@ -1213,7 +1255,7 @@
             
             // Log the selection for debugging
             console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex}`);
-            console.log(`Current question correct option: ${currentTest.questions[currentQuestionIndex].correct_option}`);
+            console.log(`Current question:`, currentTest.questions[currentQuestionIndex]);
             
             // Update UI to show selected option
             document.querySelectorAll('.option-button').forEach((button, index) => {
@@ -1259,34 +1301,50 @@
                 const userId = currentUser?.id || 1477944238; // Use default ID if none available
                 console.log('Submitting test for user:', userId);
                 
-                // Calculate the score locally for better accuracy
+                // FIXED: Calculate the score directly without relying on server
                 let correctCount = 0;
-                let totalAnswered = 0;
+                const totalQuestions = currentTest.questions.length;
                 
-                // Create an array to track which questions were answered correctly
-                const answerResults = [];
+                // Debug the test data
+                console.log('Current test data:', currentTest);
+                console.log('User answers:', userAnswers);
                 
                 // Check each answer against the correct option
-                currentTest.questions.forEach((question, index) => {
-                    const userAnswer = userAnswers[index];
-                    // Only count questions that were answered
-                    if (userAnswer !== undefined) {
-                        totalAnswered++;
-                        const isCorrect = userAnswer === question.correct_option;
-                        if (isCorrect) correctCount++;
-                        answerResults.push({
-                            questionIndex: index,
-                            userAnswer: userAnswer,
-                            correctAnswer: question.correct_option,
-                            isCorrect: isCorrect
-                        });
+                for (let i = 0; i < currentTest.questions.length; i++) {
+                    const question = currentTest.questions[i];
+                    const userAnswer = userAnswers[i];
+                    
+                    // Skip questions that weren't answered
+                    if (userAnswer === undefined) continue;
+                    
+                    // Get the correct answer
+                    const correctAnswer = question.correct_option;
+                    
+                    console.log(`Question ${i+1}: User answered ${userAnswer}, correct is ${correctAnswer}`);
+                    
+                    // Check if the answer is correct
+                    if (userAnswer === correctAnswer) {
+                        correctCount++;
+                        console.log(`Question ${i+1}: CORRECT`);
+                    } else {
+                        console.log(`Question ${i+1}: INCORRECT`);
                     }
+                }
+                
+                // Calculate percentage
+                const percentage = (correctCount / totalQuestions) * 100;
+                
+                console.log(`Final score: ${correctCount}/${totalQuestions} (${Math.round(percentage)}%)`);
+                
+                // Skip server submission and show results directly
+                showResults({
+                    correct: correctCount,
+                    total: totalQuestions,
+                    percentage: percentage
                 });
                 
-                console.log('Answer results:', answerResults);
-                console.log(`Score: ${correctCount}/${currentTest.questions.length} (${Math.round((correctCount/currentTest.questions.length)*100)}%)`);
-                
-                const response = await fetch(`/api/submit_test?user_id=${userId}`, {
+                // Still send the results to the server for logging
+                fetch(`/api/submit_test?user_id=${userId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1294,41 +1352,24 @@
                     body: JSON.stringify({
                         test_id: currentTest.id,
                         answers: userAnswers,
-                        answer_results: answerResults,  // Send detailed results
                         local_score: {
                             correct: correctCount,
-                            total: currentTest.questions.length,
-                            answered: totalAnswered,
-                            percentage: (correctCount / currentTest.questions.length) * 100
+                            total: totalQuestions,
+                            percentage: percentage
                         },
-                        user_id: userId // Include user ID in the request body as well
+                        user_id: userId
                     })
+                }).catch(error => {
+                    console.error('Error sending results to server:', error);
+                    // We already showed results, so no need to alert the user
                 });
-                
-                const data = await response.json();
-                console.log('Submit test response:', data);
-                
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to submit test');
-                }
-                
-                // Show results - first make sure we're safely handling the data
-                if (data.score && typeof data.score === 'object') {
-                    showResults(data.score);
-                } else {
-                    // Create a default score object if the server didn't return the expected format
-                    showResults({
-                        correct: userAnswers.length,
-                        total: currentTest.questions.length,
-                        percentage: (userAnswers.length / currentTest.questions.length) * 100
-                    });
-                }
             } catch (error) {
                 console.error('Error submitting test:', error);
-                alert('Failed to submit test: ' + error.message);
-                // Return to home screen on error
+                alert('Error calculating results: ' + error.message);
+                // Show home screen on error
                 showScreen(document.getElementById('home-screen'));
             }
+        }
         }
 
         // Show test results
