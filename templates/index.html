@@ -786,16 +786,16 @@
                 await loadTests();
                 
                 // Hide loading, show app
-                loadingElement.style.display = 'none';
-                appElement.style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
                 
                 // Show home screen
                 showScreen(homeScreen);
             } catch (error) {
                 console.error('Initialization error:', error);
                 alert('Failed to initialize the app: ' + error.message);
-                loadingElement.style.display = 'none';
-                directAccessMessageElement.style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('direct-access-message').style.display = 'block';
             }
         }
 
