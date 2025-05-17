@@ -1250,42 +1250,31 @@
         
         // Select an option for the current question
         function selectOption(optionIndex) {
-            // Store the actual option index as the answer
-            userAnswers[currentQuestionIndex] = optionIndex;
-            
-            // Store the actual option text for verification
-            const selectedOptionText = currentTest.questions[currentQuestionIndex].options[optionIndex];
-            
-            // Create a detailed answer record
-            if (!window.detailedAnswers) window.detailedAnswers = [];
-            
-            window.detailedAnswers[currentQuestionIndex] = {
-                questionIndex: currentQuestionIndex,
-                questionText: currentTest.questions[currentQuestionIndex].question || currentTest.questions[currentQuestionIndex].text,
-                selectedOptionIndex: optionIndex,
-                selectedOptionText: selectedOptionText,
-                correctOptionIndex: currentTest.questions[currentQuestionIndex].correct_option
-            };
-            
-            // Log the selection for debugging
-            console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex} (${selectedOptionText})`);
-            console.log(`Correct option is: ${currentTest.questions[currentQuestionIndex].correct_option}`);
-            console.log('Detailed answer record:', window.detailedAnswers[currentQuestionIndex]);
-            
-            // Update UI to show selected option
-            document.querySelectorAll('.option-button').forEach((button, index) => {
-                if (index === optionIndex) {
-                    button.classList.add('selected');
-                } else {
-                    button.classList.remove('selected');
+            try {
+                // Store the actual option index as the answer
+                userAnswers[currentQuestionIndex] = optionIndex;
+                
+                // Log the selection for debugging
+                console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex}`);
+                
+                // Update UI to show selected option
+                document.querySelectorAll('.option-button').forEach((button, index) => {
+                    if (index === optionIndex) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                });
+                
+                // Automatically move to next question after a short delay
+                if (currentQuestionIndex < currentTest.questions.length - 1) {
+                    setTimeout(() => {
+                        showQuestion(currentQuestionIndex + 1);
+                    }, 500);
                 }
-            });
-            
-            // Automatically move to next question after a short delay
-            if (currentQuestionIndex < currentTest.questions.length - 1) {
-                setTimeout(() => {
-                    showQuestion(currentQuestionIndex + 1);
-                }, 500);
+            } catch (error) {
+                console.error('Error in selectOption:', error);
+                // Continue without crashing
             }
         }
 
@@ -1308,24 +1297,15 @@
         }
 
         // Submit the test
-        async function submitTest() {
+        function submitTest() {
             try {
                 stopTimer();
                 
-                // Get the user ID for authentication
-                const userId = currentUser?.id || 1477944238; // Use default ID if none available
-                console.log('Submitting test for user:', userId);
-                
-                // COMPLETELY REVISED: Calculate the score using detailed answer records
+                // Simple score calculation
                 let correctCount = 0;
                 const totalQuestions = currentTest.questions.length;
-                const answeredQuestions = [];
                 
-                // Debug output to check what we're working with
-                console.log('Current test:', currentTest);
-                console.log('User answers array:', userAnswers);
-                
-                // DIRECT APPROACH: Simply compare each user answer with the correct option
+                // Check each answer
                 for (let i = 0; i < currentTest.questions.length; i++) {
                     const question = currentTest.questions[i];
                     const userAnswer = userAnswers[i];
@@ -1333,60 +1313,42 @@
                     // Skip questions that weren't answered
                     if (userAnswer === undefined) continue;
                     
-                    answeredQuestions.push(i);
-                    
-                    // Get the correct answer - ensure we're comparing numbers
-                    const correctAnswer = parseInt(question.correct_option);
-                    const userAnswerNum = parseInt(userAnswer);
-                    
-                    console.log(`Question ${i+1}: User answered ${userAnswerNum}, correct is ${correctAnswer}`);
-                    
                     // Check if the answer is correct
-                    if (userAnswerNum === correctAnswer) {
+                    if (parseInt(userAnswer) === parseInt(question.correct_option)) {
                         correctCount++;
-                        console.log(`Question ${i+1}: CORRECT`);
-                    } else {
-                        console.log(`Question ${i+1}: INCORRECT`);
                     }
                 }
                 
-                // Calculate percentage based on total questions
+                // Calculate percentage
                 const percentage = (correctCount / totalQuestions) * 100;
                 
-                console.log(`Final score: ${correctCount}/${totalQuestions} (${Math.round(percentage)}%)`);
-                console.log(`Answered ${answeredQuestions.length} out of ${totalQuestions} questions`);
-                
-                // Create the score object
-                const scoreObject = {
+                // Show results directly
+                showResults({
                     correct: correctCount,
                     total: totalQuestions,
-                    answered: answeredQuestions.length,
                     percentage: percentage
-                };
-                
-                // Show results directly
-                showResults(scoreObject);
-                
-                // Send the results to the server for logging
-                fetch(`/api/submit_test?user_id=${userId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        test_id: currentTest.id,
-                        answers: userAnswers,
-                        local_score: scoreObject,
-                        user_id: userId
-                    })
-                }).catch(error => {
-                    console.error('Error sending results to server:', error);
-                    // We already showed results, so no need to alert the user
                 });
+                
+                // Try to send results to server
+                try {
+                    const userId = currentUser?.id || 1477944238;
+                    fetch(`/api/submit_test?user_id=${userId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            test_id: currentTest.id,
+                            answers: userAnswers,
+                            user_id: userId
+                        })
+                    }).catch(e => console.error('Server error:', e));
+                } catch (e) {
+                    console.error('Failed to send results to server:', e);
+                }
             } catch (error) {
                 console.error('Error submitting test:', error);
-                alert('Error calculating results: ' + error.message);
-                // Show home screen on error
+                alert('Error calculating results');
                 showScreen(document.getElementById('home-screen'));
             }
         }
@@ -1394,98 +1356,37 @@
         // Show test results
         function showResults(score) {
             try {
-                console.log('Showing results:', score);
+                // Update the score elements
+                document.getElementById('score').textContent = score.correct;
+                document.getElementById('max-score').textContent = score.total;
                 
-                // Create a simple results display if the results screen is having issues
-                const resultsHtml = `
-                    <div class="p-4 text-center">
-                        <h3>${translations[currentLanguage].quizResults || 'Quiz Results'}</h3>
-                        <div class="my-4">
-                            <h4>${translations[currentLanguage].youScored || 'You scored'}: 
-                                ${score.correct} / ${score.total} (${Math.round(score.percentage)}%)</h4>
-                        </div>
-                        <div class="my-3">
-                            <button id="home-btn-alt" class="btn btn-primary">
-                                ${translations[currentLanguage].backToHome || 'Back to Home'}
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                // Get the results screen
-                const resultsScreen = document.getElementById('results-screen');
-                
-                // If the results screen exists, try to update it properly
-                if (resultsScreen) {
-                    // First try to update the existing elements
-                    try {
-                        // Try to update the score display if elements exist
-                        const scoreElement = document.getElementById('score');
-                        const maxScoreElement = document.getElementById('max-score');
-                        
-                        if (scoreElement) scoreElement.textContent = score.correct;
-                        if (maxScoreElement) maxScoreElement.textContent = score.total;
-                        
-                        // Try to update the result message if it exists
-                        const resultMessage = document.getElementById('results-message');
-                        if (resultMessage) {
-                            if (score.percentage >= 90) {
-                                resultMessage.textContent = translations[currentLanguage].excellent || 'Excellent! You did great!';
-                            } else if (score.percentage >= 70) {
-                                resultMessage.textContent = translations[currentLanguage].goodJob || 'Good job! Well done!';
-                            } else if (score.percentage >= 50) {
-                                resultMessage.textContent = translations[currentLanguage].notBad || 'Not bad, but you can do better!';
-                            } else {
-                                resultMessage.textContent = translations[currentLanguage].needPractice || 'You need more practice!';
-                            }
-                        }
-                    } catch (innerError) {
-                        console.warn('Could not update existing results elements:', innerError);
-                        // If updating elements fails, replace the entire content
-                        resultsScreen.innerHTML = resultsHtml;
-                    }
-                    
-                    // Show the results screen
-                    showScreen(resultsScreen);
-                    
-                    // Add event listener to the alternative home button if it exists
-                    const homeButtonAlt = document.getElementById('home-btn-alt');
-                    if (homeButtonAlt) {
-                        homeButtonAlt.addEventListener('click', function() {
-                            showScreen(document.getElementById('home-screen'));
-                        });
-                    }
-                } else {
-                    // If results screen doesn't exist, create a temporary one
-                    const tempResults = document.createElement('div');
-                    tempResults.id = 'temp-results-screen';
-                    tempResults.className = 'animate-slide-up';
-                    tempResults.innerHTML = resultsHtml;
-                    
-                    // Add it to the app container
-                    const appContainer = document.getElementById('app');
-                    if (appContainer) {
-                        appContainer.appendChild(tempResults);
-                        
-                        // Show it
-                        showScreen(tempResults);
-                        
-                        // Add event listener to the home button
-                        document.getElementById('home-btn-alt').addEventListener('click', function() {
-                            showScreen(document.getElementById('home-screen'));
-                            // Remove the temporary element
-                            tempResults.remove();
-                        });
+                // Set appropriate message based on score
+                const resultMessage = document.getElementById('results-message');
+                if (resultMessage) {
+                    if (score.percentage >= 80) {
+                        resultMessage.textContent = 'Excellent! You did great!';
+                    } else if (score.percentage >= 60) {
+                        resultMessage.textContent = 'Good job! Well done!';
+                    } else if (score.percentage >= 40) {
+                        resultMessage.textContent = 'Not bad, but you can do better!';
                     } else {
-                        // Last resort - just show an alert with the score
-                        alert(`${translations[currentLanguage].quizResults || 'Quiz Results'}: ${score.correct}/${score.total} (${Math.round(score.percentage)}%)`);
-                        showScreen(document.getElementById('home-screen'));
+                        resultMessage.textContent = 'You need more practice!';
                     }
+                }
+                
+                // Show the results screen
+                showScreen(document.getElementById('results-screen'));
+                
+                // Add event listener to home button
+                const homeBtn = document.getElementById('home-btn');
+                if (homeBtn) {
+                    homeBtn.onclick = function() {
+                        showScreen(document.getElementById('home-screen'));
+                    };
                 }
             } catch (error) {
                 console.error('Error showing results:', error);
-                alert(`${translations[currentLanguage].quizResults || 'Quiz Results'}: ${score.correct}/${score.total} (${Math.round(score.percentage)}%)`);
-                // Fallback to home screen if there's an error
+                alert('Quiz Results: ' + score.correct + '/' + score.total);
                 showScreen(document.getElementById('home-screen'));
             }
         }
