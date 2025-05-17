@@ -74,33 +74,43 @@ def get_user_tests(user_id):
             print(f"Trying to load user_tests.json from: {path}")
             with open(path, 'r', encoding='utf-8') as f:
                 tests_data = json.load(f)
-                user_tests = tests_data.get(user_id_str, [])
-                print(f"Found {len(user_tests)} tests for user {user_id_str} at {path}")
                 
-                # Add an ID to each test if it doesn't have one
-                for i, test in enumerate(user_tests):
-                    if 'id' not in test:
-                        test['id'] = f"test_{i+1}"
-                
-                return user_tests
+                # Check if user_id_str exists in the tests_data
+                if user_id_str in tests_data:
+                    user_tests = tests_data.get(user_id_str, [])
+                    print(f"Found {len(user_tests)} tests for user {user_id_str} at {path}")
+                    
+                    # Add an ID to each test if it doesn't have one
+                    for i, test in enumerate(user_tests):
+                        if 'id' not in test:
+                            test['id'] = f"test_{i+1}"
+                    
+                    return user_tests
+                else:
+                    print(f"User ID {user_id_str} not found in {path}")
         except Exception as e:
             print(f"Failed to load from {path}: {e}")
     
     # If all paths fail, fall back to sample tests
     try:
         sample_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sample_tests.json')
-        print(f"Falling back to sample tests at: {sample_path}")
-        
+        print(f"Falling back to sample tests from: {sample_path}")
         with open(sample_path, 'r', encoding='utf-8') as f:
-            tests_data = json.load(f)
-            sample_user_id = "1477944238"  # Sample user ID in our JSON
-            user_tests = tests_data.get(sample_user_id, [])
-            print(f"Found {len(user_tests)} sample tests")
-            return user_tests
+            sample_data = json.load(f)
+            sample_tests = sample_data.get(user_id_str, [])
+            if not sample_tests and '1477944238' in sample_data:
+                sample_tests = sample_data['1477944238']
+            
+            # Add an ID to each test if it doesn't have one
+            for i, test in enumerate(sample_tests):
+                if 'id' not in test:
+                    test['id'] = f"sample_test_{i+1}"
+            
+            print(f"Loaded {len(sample_tests)} sample tests")
+            return sample_tests
     except Exception as e:
         print(f"Failed to load sample tests: {e}")
-        
-    # If everything fails, return an empty list
+        return []   # If everything fails, return an empty list
     print("All attempts to load tests failed, returning empty list")
     return []
 

@@ -707,9 +707,9 @@
                 tests = data.tests || [];
                 console.log(`Loaded ${tests.length} tests for user ${userId}`);
                 
+                // If no tests found, try with the default user ID as fallback
                 if (tests.length === 0) {
                     console.log('No tests found, trying again with default user ID');
-                    // If no tests found, try with the default user ID as fallback
                     const fallbackUrl = `/api/tests?user_id=1477944238`;
                     const fallbackResponse = await fetch(fallbackUrl);
                     const fallbackData = await fallbackResponse.json();
@@ -719,6 +719,36 @@
                         console.log(`Loaded ${tests.length} fallback tests`);
                     }
                 }
+                
+                // Make sure we have valid test data
+                tests.forEach((test, index) => {
+                    // Ensure test has an ID
+                    if (!test.id) {
+                        test.id = `test_${index}`;
+                    }
+                    
+                    // Ensure test has a name
+                    if (!test.name) {
+                        test.name = `Test ${index + 1}`;
+                    }
+                    
+                    // Ensure test has questions array
+                    if (!test.questions || !Array.isArray(test.questions)) {
+                        test.questions = [];
+                    }
+                    
+                    // Normalize question format
+                    test.questions.forEach((question, qIndex) => {
+                        // Handle different question formats
+                        if (question.text && !question.question) {
+                            question.question = question.text;
+                        }
+                        
+                        if (!question.options || !Array.isArray(question.options)) {
+                            question.options = [];
+                        }
+                    });
+                });
                 
                 renderTestsList();
             } catch (error) {
@@ -859,42 +889,58 @@
                 return;
             }
             
+            // Update current question index
             currentQuestionIndex = index;
-            const question = currentTest.questions[index];
             
-            // Update question text
-            questionText.textContent = question.text;
-            
-            // Update question number
+            // Update UI elements
             currentQuestionElement.textContent = index + 1;
+            totalQuestionsElement.textContent = currentTest.questions.length;
             
             // Update progress bar
             const progress = ((index + 1) / currentTest.questions.length) * 100;
             progressBar.style.width = `${progress}%`;
             
-            // Update options
+            // Get current question
+            const question = currentTest.questions[index];
+            
+            // Update question text (handle both formats: question.question or question.text)
+            questionText.textContent = question.question || question.text || `Question ${index + 1}`;
+            
+            // Clear previous options
             optionsContainer.innerHTML = '';
-            question.options.forEach((option, optionIndex) => {
-                const button = document.createElement('button');
-                button.className = 'option-button';
-                button.textContent = option;
-                
-                if (userAnswers[index] === optionIndex) {
-                    button.classList.add('selected');
-                }
-                
-                button.addEventListener('click', () => {
-                    selectOption(optionIndex);
+            
+            // Add options
+            if (question.options && Array.isArray(question.options)) {
+                question.options.forEach((option, optionIndex) => {
+                    const optionButton = document.createElement('button');
+                    optionButton.className = 'option-button';
+                    optionButton.textContent = option;
+                    
+                    // Check if this option was previously selected
+                    if (userAnswers[index] === optionIndex) {
+                        optionButton.classList.add('selected');
+                    }
+                    
+                    optionButton.addEventListener('click', () => {
+                        selectOption(optionIndex);
+                    });
+                    
+                    optionsContainer.appendChild(optionButton);
                 });
-                
-                optionsContainer.appendChild(button);
-            });
+            } else {
+                // Handle case where options are missing
+                const noOptionsMessage = document.createElement('div');
+                noOptionsMessage.className = 'alert alert-warning';
+                noOptionsMessage.textContent = 'No options available for this question.';
+                optionsContainer.appendChild(noOptionsMessage);
+            }
             
             // Update navigation buttons
             prevBtn.disabled = index === 0;
-            nextBtn.textContent = index === currentTest.questions.length - 1 ? 'Finish' : 'Next';
+            nextBtn.style.display = index < currentTest.questions.length - 1 ? 'block' : 'none';
+            finishBtn.style.display = index === currentTest.questions.length - 1 ? 'block' : 'none';
         }
-
+        
         // Select an option for the current question
         function selectOption(optionIndex) {
             userAnswers[currentQuestionIndex] = optionIndex;
