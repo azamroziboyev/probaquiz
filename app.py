@@ -8,8 +8,8 @@ import time
 import hmac
 import base64
 
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__, static_url_path='/static', static_folder='static')
+CORS(app)  # Enable CORS for all routes
 app.secret_key = os.environ.get("SESSION_SECRET", "masterquiz_telegram_webapp_secret")
 
 # Telegram Bot Token (same as in main.py)
