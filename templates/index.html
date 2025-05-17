@@ -1282,24 +1282,35 @@
 
         // Show test results
         function showResults(score) {
-            document.getElementById('correct-answers').textContent = score.correct;
-            document.getElementById('total-questions-result').textContent = score.total;
-            document.querySelector('.result-percentage').textContent = `${Math.round(score.percentage)}%`;
-            document.querySelector('.result-circle').style.setProperty('--percentage', `${score.percentage}%`);
-            
-            // Set result message based on score
-            const resultMessage = document.getElementById('result-message');
-            if (score.percentage >= 90) {
-                resultMessage.textContent = 'Excellent! You did great!';
-            } else if (score.percentage >= 70) {
-                resultMessage.textContent = 'Good job! Well done!';
-            } else if (score.percentage >= 50) {
-                resultMessage.textContent = 'Not bad, but you can do better!';
-            } else {
-                resultMessage.textContent = 'You need more practice!';
+            try {
+                console.log('Showing results:', score);
+                
+                // Update score display
+                document.getElementById('score').textContent = score.correct;
+                document.getElementById('max-score').textContent = score.total;
+                
+                // Set result message based on score
+                const resultMessage = document.getElementById('results-message');
+                if (resultMessage) {
+                    if (score.percentage >= 90) {
+                        resultMessage.textContent = translations[currentLanguage].excellent || 'Excellent! You did great!';
+                    } else if (score.percentage >= 70) {
+                        resultMessage.textContent = translations[currentLanguage].goodJob || 'Good job! Well done!';
+                    } else if (score.percentage >= 50) {
+                        resultMessage.textContent = translations[currentLanguage].notBad || 'Not bad, but you can do better!';
+                    } else {
+                        resultMessage.textContent = translations[currentLanguage].needPractice || 'You need more practice!';
+                    }
+                }
+                
+                // Show results screen
+                showScreen(document.getElementById('results-screen'));
+            } catch (error) {
+                console.error('Error showing results:', error);
+                alert('Error showing results: ' + error.message);
+                // Fallback to home screen if there's an error
+                showScreen(document.getElementById('home-screen'));
             }
-            
-            showScreen(document.getElementById('results-screen'));
         }
 
         // Show a specific screen
