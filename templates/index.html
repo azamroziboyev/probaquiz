@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MasterQuiz</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #222222;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2678b6;
+            --tg-theme-button-color: #50a8eb;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f0f0f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #222222);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 16px;
+        }
+
+        .card {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+        }
+
+        .btn-outline-primary {
+            border-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-color, #50a8eb);
+            background-color: transparent;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+        }
+
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #222222);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .option-button:hover, .option-button:focus {
+            background-color: rgba(80, 168, 235, 0.1);
+        }
+
+        .option-button.selected {
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        .quiz-progress {
+            height: 6px;
+            margin-bottom: 20px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .quiz-progress-bar {
+            height: 100%;
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            transition: width 0.3s ease;
+        }
+
+        .result-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--tg-theme-button-color, #50a8eb) 0%, var(--tg-theme-button-color, #50a8eb) var(--percentage), #f0f0f0 var(--percentage), #f0f0f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .result-circle::after {
+            content: '';
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+        }
+
+        .result-percentage {
+            position: relative;
+            z-index: 1;
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--tg-theme-text-color, #222222);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .spinner-border {
+            color: var(--tg-theme-button-color, #50a8eb);
+        }
+
+        #app {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div id="app" class="container">
+        <!-- Home Screen -->
+        <div id="home-screen">
+            <h1 class="mb-4">MasterQuiz</h1>
+            <p class="mb-4">Welcome to MasterQuiz! Choose a test to start solving.</p>
+            <div id="tests-list" class="mb-4">
+                <!-- Tests will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" style="display: none;">
+            <div class="quiz-progress">
+                <div id="quiz-progress-bar" class="quiz-progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <div>Question <span id="current-question">1</span>/<span id="total-questions">10</span></div>
+                <div id="timer">00:00</div>
+            </div>
+            <div class="card mb-4">
+                <h5 id="question-text" class="mb-3">Question text goes here?</h5>
+                <div id="options-container">
+                    <!-- Options will be loaded here -->
+                </div>
+            </div>
+            <div class="d-flex justify-content-between">
+                <button id="prev-btn" class="btn btn-outline-primary" disabled>Previous</button>
+                <button id="next-btn" class="btn btn-primary">Next</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" style="display: none;">
+            <h2 class="text-center mb-4">Quiz Results</h2>
+            <div class="result-circle">
+                <div class="result-percentage">0%</div>
+            </div>
+            <div class="text-center mb-4">
+                <h4>You scored <span id="correct-answers">0</span>/<span id="total-questions-result">0</span></h4>
+                <p id="result-message">Great job!</p>
+            </div>
+            <div class="d-grid gap-2">
+                <button id="review-btn" class="btn btn-primary">Review Answers</button>
+                <button id="home-btn" class="btn btn-outline-primary">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // DOM elements
+        const loadingElement = document.getElementById('loading');
+        const appElement = document.getElementById('app');
+        const homeScreen = document.getElementById('home-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const testsList = document.getElementById('tests-list');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const currentQuestionElement = document.getElementById('current-question');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const totalQuestionsResultElement = document.getElementById('total-questions-result');
+        const correctAnswersElement = document.getElementById('correct-answers');
+        const resultMessageElement = document.getElementById('result-message');
+        const resultPercentageElement = document.querySelector('.result-percentage');
+        const resultCircleElement = document.querySelector('.result-circle');
+        const progressBar = document.getElementById('quiz-progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const reviewBtn = document.getElementById('review-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const timerElement = document.getElementById('timer');
+
+        // App state
+        let currentUser = null;
+        let tests = [];
+        let currentTest = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let startTime = 0;
+        let timerInterval = null;
+
+        // Initialize the app
+        async function initApp() {
+            try {
+                // Validate user with Telegram
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `initData=${encodeURIComponent(tg.initData)}`
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Authentication failed');
+                }
+                
+                currentUser = data.user;
+                
+                // Load user's tests
+                await loadTests();
+                
+                // Hide loading, show app
+                loadingElement.style.display = 'none';
+                appElement.style.display = 'block';
+                
+                // Show home screen
+                showScreen(homeScreen);
+            } catch (error) {
+                console.error('Initialization error:', error);
+                alert('Failed to initialize the app: ' + error.message);
+            }
+        }
+
+        // Load user's tests
+        async function loadTests() {
+            try {
+                const response = await fetch('/api/tests');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load tests');
+                }
+                
+                tests = data.tests;
+                renderTestsList();
+            } catch (error) {
+                console.error('Error loading tests:', error);
+                alert('Failed to load tests: ' + error.message);
+            }
+        }
+
+        // Render tests list
+        function renderTestsList() {
+            testsList.innerHTML = '';
+            
+            if (tests.length === 0) {
+                testsList.innerHTML = '<div class="alert alert-info">You don\'t have any tests yet. Create a test in the bot first.</div>';
+                return;
+            }
+            
+            tests.forEach(test => {
+                const testCard = document.createElement('div');
+                testCard.className = 'card';
+                testCard.innerHTML = `
+                    <h5 class="card-title">${test.name}</h5>
+                    <p class="card-text">${test.questions.length} questions</p>
+                    <button class="btn btn-primary start-test-btn" data-test-id="${test.id}">Start Test</button>
+                `;
+                testsList.appendChild(testCard);
+            });
+            
+            // Add event listeners to start test buttons
+            document.querySelectorAll('.start-test-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const testId = button.getAttribute('data-test-id');
+                    startTest(testId);
+                });
+            });
+        }
+
+        // Start a test
+        function startTest(testId) {
+            currentTest = tests.find(test => test.id == testId);
+            
+            if (!currentTest) {
+                alert('Test not found');
+                return;
+            }
+            
+            // Reset state
+            currentQuestionIndex = 0;
+            userAnswers = new Array(currentTest.questions.length).fill(null);
+            
+            // Update UI
+            totalQuestionsElement.textContent = currentTest.questions.length;
+            
+            // Show first question
+            showQuestion(0);
+            
+            // Show quiz screen
+            showScreen(quizScreen);
+            
+            // Start timer
+            startTime = Date.now();
+            startTimer();
+        }
+
+        // Show a specific question
+        function showQuestion(index) {
+            if (index < 0 || index >= currentTest.questions.length) {
+                return;
+            }
+            
+            currentQuestionIndex = index;
+            const question = currentTest.questions[index];
+            
+            // Update question text
+            questionText.textContent = question.text;
+            
+            // Update question number
+            currentQuestionElement.textContent = index + 1;
+            
+            // Update progress bar
+            const progress = ((index + 1) / currentTest.questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Update options
+            optionsContainer.innerHTML = '';
+            question.options.forEach((option, optionIndex) => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = option;
+                
+                if (userAnswers[index] === optionIndex) {
+                    button.classList.add('selected');
+                }
+                
+                button.addEventListener('click', () => {
+                    selectOption(optionIndex);
+                });
+                
+                optionsContainer.appendChild(button);
+            });
+            
+            // Update navigation buttons
+            prevBtn.disabled = index === 0;
+            nextBtn.textContent = index === currentTest.questions.length - 1 ? 'Finish' : 'Next';
+        }
+
+        // Select an option for the current question
+        function selectOption(optionIndex) {
+            userAnswers[currentQuestionIndex] = optionIndex;
+            
+            // Update UI to show selected option
+            document.querySelectorAll('.option-button').forEach((button, index) => {
+                if (index === optionIndex) {
+                    button.classList.add('selected');
+                } else {
+                    button.classList.remove('selected');
+                }
+            });
+        }
+
+        // Start the timer
+        function startTimer() {
+            clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Stop the timer
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // Submit the test
+        async function submitTest() {
+            try {
+                stopTimer();
+                
+                const response = await fetch('/api/submit_test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        test_id: currentTest.id,
+                        answers: userAnswers
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to submit test');
+                }
+                
+                // Show results
+                showResults(data.score);
+            } catch (error) {
+                console.error('Error submitting test:', error);
+                alert('Failed to submit test: ' + error.message);
+            }
+        }
+
+        // Show test results
+        function showResults(score) {
+            correctAnswersElement.textContent = score.correct;
+            totalQuestionsResultElement.textContent = score.total;
+            resultPercentageElement.textContent = `${Math.round(score.percentage)}%`;
+            resultCircleElement.style.setProperty('--percentage', `${score.percentage}%`);
+            
+            // Set result message based on score
+            if (score.percentage >= 90) {
+                resultMessageElement.textContent = 'Excellent! You did great!';
+            } else if (score.percentage >= 70) {
+                resultMessageElement.textContent = 'Good job! Well done!';
+            } else if (score.percentage >= 50) {
+                resultMessageElement.textContent = 'Not bad, but you can do better!';
+            } else {
+                resultMessageElement.textContent = 'You need more practice!';
+            }
+            
+            showScreen(resultsScreen);
+        }
+
+        // Show a specific screen
+        function showScreen(screen) {
+            homeScreen.style.display = 'none';
+            quizScreen.style.display = 'none';
+            resultsScreen.style.display = 'none';
+            
+            screen.style.display = 'block';
+        }
+
+        // Event listeners
+        prevBtn.addEventListener('click', () => {
+            showQuestion(currentQuestionIndex - 1);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex === currentTest.questions.length - 1) {
+                submitTest();
+            } else {
+                showQuestion(currentQuestionIndex + 1);
+            }
+        });
+
+        reviewBtn.addEventListener('click', () => {
+            // TODO: Implement review functionality
+            alert('Review functionality will be implemented soon!');
+        });
+
+        homeBtn.addEventListener('click', () => {
+            showScreen(homeScreen);
+        });
+
+        // Initialize the app when the document is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
