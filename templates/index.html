@@ -1250,14 +1250,19 @@
             try {
                 stopTimer();
                 
-                const response = await fetch('/api/submit_test', {
+                // Get the user ID for authentication
+                const userId = currentUser?.id || 1477944238; // Use default ID if none available
+                console.log('Submitting test for user:', userId);
+                
+                const response = await fetch(`/api/submit_test?user_id=${userId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         test_id: currentTest.id,
-                        answers: userAnswers
+                        answers: userAnswers,
+                        user_id: userId // Include user ID in the request body as well
                     })
                 });
                 

@@ -230,7 +230,18 @@ def get_test(test_id):
 # API endpoint to submit test answers
 @app.route('/api/submit_test', methods=['POST'])
 def submit_test():
+    # Try to get user_id from session first
     user_id = session.get('user_id')
+    
+    # If not in session, try to get from query parameters or request body
+    if not user_id:
+        user_id = request.args.get('user_id') or (request.json and request.json.get('user_id'))
+        
+        # If we found a user_id, store it in the session for future requests
+        if user_id:
+            session['user_id'] = user_id
+            print(f"Using user_id from request: {user_id}")
+    
     if not user_id:
         return jsonify({
             'success': False,
