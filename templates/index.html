@@ -1208,7 +1208,12 @@
         
         // Select an option for the current question
         function selectOption(optionIndex) {
+            // Store the actual option index as the answer
             userAnswers[currentQuestionIndex] = optionIndex;
+            
+            // Log the selection for debugging
+            console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex}`);
+            console.log(`Current question correct option: ${currentTest.questions[currentQuestionIndex].correct_option}`);
             
             // Update UI to show selected option
             document.querySelectorAll('.option-button').forEach((button, index) => {
@@ -1254,6 +1259,33 @@
                 const userId = currentUser?.id || 1477944238; // Use default ID if none available
                 console.log('Submitting test for user:', userId);
                 
+                // Calculate the score locally for better accuracy
+                let correctCount = 0;
+                let totalAnswered = 0;
+                
+                // Create an array to track which questions were answered correctly
+                const answerResults = [];
+                
+                // Check each answer against the correct option
+                currentTest.questions.forEach((question, index) => {
+                    const userAnswer = userAnswers[index];
+                    // Only count questions that were answered
+                    if (userAnswer !== undefined) {
+                        totalAnswered++;
+                        const isCorrect = userAnswer === question.correct_option;
+                        if (isCorrect) correctCount++;
+                        answerResults.push({
+                            questionIndex: index,
+                            userAnswer: userAnswer,
+                            correctAnswer: question.correct_option,
+                            isCorrect: isCorrect
+                        });
+                    }
+                });
+                
+                console.log('Answer results:', answerResults);
+                console.log(`Score: ${correctCount}/${currentTest.questions.length} (${Math.round((correctCount/currentTest.questions.length)*100)}%)`);
+                
                 const response = await fetch(`/api/submit_test?user_id=${userId}`, {
                     method: 'POST',
                     headers: {
@@ -1262,6 +1294,13 @@
                     body: JSON.stringify({
                         test_id: currentTest.id,
                         answers: userAnswers,
+                        answer_results: answerResults,  // Send detailed results
+                        local_score: {
+                            correct: correctCount,
+                            total: currentTest.questions.length,
+                            answered: totalAnswered,
+                            percentage: (correctCount / currentTest.questions.length) * 100
+                        },
                         user_id: userId // Include user ID in the request body as well
                     })
                 });

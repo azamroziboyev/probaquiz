@@ -266,16 +266,43 @@ def submit_test():
             'message': 'Test not found'
         }), 404
     
-    # Calculate score
-    correct_count = 0
-    total_questions = len(test.get('questions', []))
+    # Get the local score calculation if available
+    local_score = data.get('local_score')
+    answer_results = data.get('answer_results', [])
     
-    for i, question in enumerate(test.get('questions', [])):
-        if i < len(answers) and answers[i] == question.get('correct_option'):
-            correct_count += 1
+    # Print debug information
+    print(f"Received answers: {answers}")
+    print(f"Answer results: {answer_results}")
+    print(f"Local score: {local_score}")
     
-    score = correct_count / total_questions if total_questions > 0 else 0
-    percentage = score * 100
+    # If we have a local score calculation, use that
+    if local_score and isinstance(local_score, dict):
+        correct_count = local_score.get('correct', 0)
+        total_questions = local_score.get('total', len(test.get('questions', [])))
+        percentage = local_score.get('percentage', 0)
+        
+        print(f"Using local score calculation: {correct_count}/{total_questions} ({percentage}%)")
+    else:
+        # Fall back to server-side calculation
+        correct_count = 0
+        total_questions = len(test.get('questions', []))
+        
+        # Check each answer
+        for i, question in enumerate(test.get('questions', [])):
+            if i < len(answers):
+                user_answer = answers[i]
+                correct_answer = question.get('correct_option')
+                print(f"Question {i+1}: User answered {user_answer}, correct is {correct_answer}")
+                
+                # Check if the answer is correct
+                if user_answer == correct_answer:
+                    correct_count += 1
+                    print(f"Question {i+1}: CORRECT")
+                else:
+                    print(f"Question {i+1}: INCORRECT")
+        
+        print(f"Total correct: {correct_count} out of {total_questions}")
+        percentage = (correct_count / total_questions) * 100 if total_questions > 0 else 0
     
     # TODO: Save results to database (would need to integrate with the bot's database)
     
