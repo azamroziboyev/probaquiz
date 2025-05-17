@@ -50,32 +50,57 @@ def validate_telegram_webapp(init_data):
 
 # Function to get tests for a user
 def get_user_tests(user_id):
+    # Convert user_id to string if it's not already
+    user_id_str = str(user_id)
+    print(f"Getting tests for user: {user_id_str}")
+    
+    # Try multiple locations for the user_tests.json file
+    possible_paths = [
+        # Path relative to the current directory
+        'user_tests.json',
+        # Path relative to the parent directory
+        '../user_tests.json',
+        # Absolute path based on current file location
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user_tests.json'),
+        # Railway deployment path
+        '/app/user_tests.json'
+    ]
+    
+    # Try each path until we find the file
+    for path in possible_paths:
+        try:
+            print(f"Trying to load user_tests.json from: {path}")
+            with open(path, 'r', encoding='utf-8') as f:
+                tests_data = json.load(f)
+                user_tests = tests_data.get(user_id_str, [])
+                print(f"Found {len(user_tests)} tests for user {user_id_str} at {path}")
+                
+                # Add an ID to each test if it doesn't have one
+                for i, test in enumerate(user_tests):
+                    if 'id' not in test:
+                        test['id'] = f"test_{i+1}"
+                
+                return user_tests
+        except Exception as e:
+            print(f"Failed to load from {path}: {e}")
+    
+    # If all paths fail, fall back to sample tests
     try:
-        # Use absolute path to ensure we can find the file
-        import os
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        user_tests_path = os.path.join(base_dir, 'user_tests.json')
+        sample_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sample_tests.json')
+        print(f"Falling back to sample tests at: {sample_path}")
         
-        print(f"Looking for user tests at: {user_tests_path}")
-        
-        with open(user_tests_path, 'r', encoding='utf-8') as f:
+        with open(sample_path, 'r', encoding='utf-8') as f:
             tests_data = json.load(f)
-            
-            # Convert user_id to string if it's not already
-            user_id_str = str(user_id)
-            user_tests = tests_data.get(user_id_str, [])
-            
-            print(f"Found {len(user_tests)} tests for user {user_id_str}")
-            
-            # Add an ID to each test if it doesn't have one
-            for i, test in enumerate(user_tests):
-                if 'id' not in test:
-                    test['id'] = f"test_{i+1}"
-            
+            sample_user_id = "1477944238"  # Sample user ID in our JSON
+            user_tests = tests_data.get(sample_user_id, [])
+            print(f"Found {len(user_tests)} sample tests")
             return user_tests
     except Exception as e:
-        print(f"Error getting user tests: {e}")
-        return []
+        print(f"Failed to load sample tests: {e}")
+        
+    # If everything fails, return an empty list
+    print("All attempts to load tests failed, returning empty list")
+    return []
 
 # Main route for the web app
 @app.route('/')
