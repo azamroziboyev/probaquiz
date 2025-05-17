@@ -1267,16 +1267,28 @@
                 });
                 
                 const data = await response.json();
+                console.log('Submit test response:', data);
                 
                 if (!data.success) {
                     throw new Error(data.message || 'Failed to submit test');
                 }
                 
-                // Show results
-                showResults(data.score);
+                // Show results - first make sure we're safely handling the data
+                if (data.score && typeof data.score === 'object') {
+                    showResults(data.score);
+                } else {
+                    // Create a default score object if the server didn't return the expected format
+                    showResults({
+                        correct: userAnswers.length,
+                        total: currentTest.questions.length,
+                        percentage: (userAnswers.length / currentTest.questions.length) * 100
+                    });
+                }
             } catch (error) {
                 console.error('Error submitting test:', error);
                 alert('Failed to submit test: ' + error.message);
+                // Return to home screen on error
+                showScreen(document.getElementById('home-screen'));
             }
         }
 
@@ -1285,29 +1297,95 @@
             try {
                 console.log('Showing results:', score);
                 
-                // Update score display
-                document.getElementById('score').textContent = score.correct;
-                document.getElementById('max-score').textContent = score.total;
+                // Create a simple results display if the results screen is having issues
+                const resultsHtml = `
+                    <div class="p-4 text-center">
+                        <h3>${translations[currentLanguage].quizResults || 'Quiz Results'}</h3>
+                        <div class="my-4">
+                            <h4>${translations[currentLanguage].youScored || 'You scored'}: 
+                                ${score.correct} / ${score.total} (${Math.round(score.percentage)}%)</h4>
+                        </div>
+                        <div class="my-3">
+                            <button id="home-btn-alt" class="btn btn-primary">
+                                ${translations[currentLanguage].backToHome || 'Back to Home'}
+                            </button>
+                        </div>
+                    </div>
+                `;
                 
-                // Set result message based on score
-                const resultMessage = document.getElementById('results-message');
-                if (resultMessage) {
-                    if (score.percentage >= 90) {
-                        resultMessage.textContent = translations[currentLanguage].excellent || 'Excellent! You did great!';
-                    } else if (score.percentage >= 70) {
-                        resultMessage.textContent = translations[currentLanguage].goodJob || 'Good job! Well done!';
-                    } else if (score.percentage >= 50) {
-                        resultMessage.textContent = translations[currentLanguage].notBad || 'Not bad, but you can do better!';
+                // Get the results screen
+                const resultsScreen = document.getElementById('results-screen');
+                
+                // If the results screen exists, try to update it properly
+                if (resultsScreen) {
+                    // First try to update the existing elements
+                    try {
+                        // Try to update the score display if elements exist
+                        const scoreElement = document.getElementById('score');
+                        const maxScoreElement = document.getElementById('max-score');
+                        
+                        if (scoreElement) scoreElement.textContent = score.correct;
+                        if (maxScoreElement) maxScoreElement.textContent = score.total;
+                        
+                        // Try to update the result message if it exists
+                        const resultMessage = document.getElementById('results-message');
+                        if (resultMessage) {
+                            if (score.percentage >= 90) {
+                                resultMessage.textContent = translations[currentLanguage].excellent || 'Excellent! You did great!';
+                            } else if (score.percentage >= 70) {
+                                resultMessage.textContent = translations[currentLanguage].goodJob || 'Good job! Well done!';
+                            } else if (score.percentage >= 50) {
+                                resultMessage.textContent = translations[currentLanguage].notBad || 'Not bad, but you can do better!';
+                            } else {
+                                resultMessage.textContent = translations[currentLanguage].needPractice || 'You need more practice!';
+                            }
+                        }
+                    } catch (innerError) {
+                        console.warn('Could not update existing results elements:', innerError);
+                        // If updating elements fails, replace the entire content
+                        resultsScreen.innerHTML = resultsHtml;
+                    }
+                    
+                    // Show the results screen
+                    showScreen(resultsScreen);
+                    
+                    // Add event listener to the alternative home button if it exists
+                    const homeButtonAlt = document.getElementById('home-btn-alt');
+                    if (homeButtonAlt) {
+                        homeButtonAlt.addEventListener('click', function() {
+                            showScreen(document.getElementById('home-screen'));
+                        });
+                    }
+                } else {
+                    // If results screen doesn't exist, create a temporary one
+                    const tempResults = document.createElement('div');
+                    tempResults.id = 'temp-results-screen';
+                    tempResults.className = 'animate-slide-up';
+                    tempResults.innerHTML = resultsHtml;
+                    
+                    // Add it to the app container
+                    const appContainer = document.getElementById('app');
+                    if (appContainer) {
+                        appContainer.appendChild(tempResults);
+                        
+                        // Show it
+                        showScreen(tempResults);
+                        
+                        // Add event listener to the home button
+                        document.getElementById('home-btn-alt').addEventListener('click', function() {
+                            showScreen(document.getElementById('home-screen'));
+                            // Remove the temporary element
+                            tempResults.remove();
+                        });
                     } else {
-                        resultMessage.textContent = translations[currentLanguage].needPractice || 'You need more practice!';
+                        // Last resort - just show an alert with the score
+                        alert(`${translations[currentLanguage].quizResults || 'Quiz Results'}: ${score.correct}/${score.total} (${Math.round(score.percentage)}%)`);
+                        showScreen(document.getElementById('home-screen'));
                     }
                 }
-                
-                // Show results screen
-                showScreen(document.getElementById('results-screen'));
             } catch (error) {
                 console.error('Error showing results:', error);
-                alert('Error showing results: ' + error.message);
+                alert(`${translations[currentLanguage].quizResults || 'Quiz Results'}: ${score.correct}/${score.total} (${Math.round(score.percentage)}%)`);
                 // Fallback to home screen if there's an error
                 showScreen(document.getElementById('home-screen'));
             }
