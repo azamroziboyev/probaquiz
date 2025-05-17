@@ -295,14 +295,22 @@
         // Load user's tests
         async function loadTests() {
             try {
-                const response = await fetch('/api/tests');
+                console.log('Loading tests for user:', currentUser?.id);
+                
+                // If we have a current user, add the ID as a query parameter for debugging
+                const url = currentUser?.id ? `/api/tests?user_id=${currentUser.id}` : '/api/tests';
+                console.log('Fetching tests from:', url);
+                
+                const response = await fetch(url);
                 const data = await response.json();
+                console.log('Tests API response:', data);
                 
                 if (!data.success) {
                     throw new Error(data.message || 'Failed to load tests');
                 }
                 
-                tests = data.tests;
+                tests = data.tests || [];
+                console.log(`Loaded ${tests.length} tests`);
                 renderTestsList();
             } catch (error) {
                 console.error('Error loading tests:', error);
@@ -314,12 +322,25 @@
         function renderTestsList() {
             testsList.innerHTML = '';
             
-            if (tests.length === 0) {
+            if (!tests || tests.length === 0) {
                 testsList.innerHTML = '<div class="alert alert-info">You don\'t have any tests yet. Create a test in the bot first.</div>';
                 return;
             }
             
             tests.forEach(test => {
+                // Make sure test has required properties
+                if (!test.name) {
+                    test.name = 'Unnamed Test';
+                }
+                
+                if (!test.questions) {
+                    test.questions = [];
+                }
+                
+                if (!test.id) {
+                    test.id = `test_${Math.random().toString(36).substr(2, 9)}`;
+                }
+                
                 const testCard = document.createElement('div');
                 testCard.className = 'card';
                 testCard.innerHTML = `

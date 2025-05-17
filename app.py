@@ -51,10 +51,30 @@ def validate_telegram_webapp(init_data):
 # Function to get tests for a user
 def get_user_tests(user_id):
     try:
-        with open('../user_tests.json', 'r', encoding='utf-8') as f:
+        # Use absolute path to ensure we can find the file
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        user_tests_path = os.path.join(base_dir, 'user_tests.json')
+        
+        print(f"Looking for user tests at: {user_tests_path}")
+        
+        with open(user_tests_path, 'r', encoding='utf-8') as f:
             tests_data = json.load(f)
-            return tests_data.get(str(user_id), [])
-    except (FileNotFoundError, json.JSONDecodeError):
+            
+            # Convert user_id to string if it's not already
+            user_id_str = str(user_id)
+            user_tests = tests_data.get(user_id_str, [])
+            
+            print(f"Found {len(user_tests)} tests for user {user_id_str}")
+            
+            # Add an ID to each test if it doesn't have one
+            for i, test in enumerate(user_tests):
+                if 'id' not in test:
+                    test['id'] = f"test_{i+1}"
+            
+            return user_tests
+    except Exception as e:
+        print(f"Error getting user tests: {e}")
         return []
 
 # Main route for the web app
@@ -104,19 +124,34 @@ def validate_user():
 # API endpoint to get tests for the authenticated user
 @app.route('/api/tests', methods=['GET'])
 def get_tests():
-    user_id = session.get('user_id')
-    if not user_id:
+    try:
+        # Get user_id from session or query parameter
+        user_id = session.get('user_id')
+        
+        # For debugging, also accept a user_id query parameter
+        if not user_id and request.args.get('user_id'):
+            user_id = request.args.get('user_id')
+        
+        if not user_id:
+            print("No user_id found in session or query parameters")
+            return jsonify({
+                'success': False,
+                'message': 'User not authenticated'
+            }), 401
+        
+        print(f"Getting tests for user_id: {user_id}")
+        tests = get_user_tests(user_id)
+        
+        return jsonify({
+            'success': True,
+            'tests': tests
+        })
+    except Exception as e:
+        print(f"Error in get_tests: {e}")
         return jsonify({
             'success': False,
-            'message': 'User not authenticated'
-        }), 401
-    
-    tests = get_user_tests(user_id)
-    
-    return jsonify({
-        'success': True,
-        'tests': tests
-    })
+            'message': f'Error getting tests: {str(e)}'
+        }), 500
 
 # API endpoint to get a specific test
 @app.route('/api/tests/<test_id>', methods=['GET'])
