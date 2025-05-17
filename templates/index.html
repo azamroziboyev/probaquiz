@@ -196,11 +196,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Check if we're in a Telegram WebApp environment
+        if (!window.Telegram || !window.Telegram.WebApp) {
+            // Not running in Telegram WebApp - show message and hide app
+            document.getElementById('direct-access-message').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'none';
+            // Exit early - don't execute the rest of the script
+            throw new Error('This app can only be accessed through Telegram');
+        }
+        
         // Initialize Telegram WebApp
         const tg = window.Telegram.WebApp;
         tg.expand();
-
+        
         // DOM elements
+        const directAccessMessageElement = document.getElementById('direct-access-message');
         const loadingElement = document.getElementById('loading');
         const appElement = document.getElementById('app');
         const homeScreen = document.getElementById('home-screen');
@@ -235,22 +246,34 @@
         // Initialize the app
         async function initApp() {
             try {
+                console.log('Initializing app...');
+                console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
+                
+                if (!window.Telegram || !window.Telegram.WebApp) {
+                    throw new Error('Telegram WebApp is not available');
+                }
+                
+                // Log initData for debugging
+                console.log('initData length:', tg.initData?.length || 0);
+                
                 // Validate user with Telegram
                 const response = await fetch('/api/validate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `initData=${encodeURIComponent(tg.initData)}`
+                    body: `initData=${encodeURIComponent(tg.initData || '')}`
                 });
                 
                 const data = await response.json();
+                console.log('Validation response:', data);
                 
                 if (!data.success) {
                     throw new Error(data.message || 'Authentication failed');
                 }
                 
                 currentUser = data.user;
+                console.log('User authenticated:', currentUser);
                 
                 // Load user's tests
                 await loadTests();
@@ -264,6 +287,8 @@
             } catch (error) {
                 console.error('Initialization error:', error);
                 alert('Failed to initialize the app: ' + error.message);
+                loadingElement.style.display = 'none';
+                directAccessMessageElement.style.display = 'block';
             }
         }
 
