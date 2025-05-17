@@ -1253,9 +1253,24 @@
             // Store the actual option index as the answer
             userAnswers[currentQuestionIndex] = optionIndex;
             
+            // Store the actual option text for verification
+            const selectedOptionText = currentTest.questions[currentQuestionIndex].options[optionIndex];
+            
+            // Create a detailed answer record
+            if (!window.detailedAnswers) window.detailedAnswers = [];
+            
+            window.detailedAnswers[currentQuestionIndex] = {
+                questionIndex: currentQuestionIndex,
+                questionText: currentTest.questions[currentQuestionIndex].question || currentTest.questions[currentQuestionIndex].text,
+                selectedOptionIndex: optionIndex,
+                selectedOptionText: selectedOptionText,
+                correctOptionIndex: currentTest.questions[currentQuestionIndex].correct_option
+            };
+            
             // Log the selection for debugging
-            console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex}`);
-            console.log(`Current question:`, currentTest.questions[currentQuestionIndex]);
+            console.log(`Question ${currentQuestionIndex + 1}: Selected option ${optionIndex} (${selectedOptionText})`);
+            console.log(`Correct option is: ${currentTest.questions[currentQuestionIndex].correct_option}`);
+            console.log('Detailed answer record:', window.detailedAnswers[currentQuestionIndex]);
             
             // Update UI to show selected option
             document.querySelectorAll('.option-button').forEach((button, index) => {
@@ -1301,15 +1316,16 @@
                 const userId = currentUser?.id || 1477944238; // Use default ID if none available
                 console.log('Submitting test for user:', userId);
                 
-                // FIXED: Calculate the score directly without relying on server
+                // COMPLETELY REVISED: Calculate the score using detailed answer records
                 let correctCount = 0;
                 const totalQuestions = currentTest.questions.length;
+                const answeredQuestions = [];
                 
-                // Debug the test data
-                console.log('Current test data:', currentTest);
-                console.log('User answers:', userAnswers);
+                // Debug output to check what we're working with
+                console.log('Current test:', currentTest);
+                console.log('User answers array:', userAnswers);
                 
-                // Check each answer against the correct option
+                // DIRECT APPROACH: Simply compare each user answer with the correct option
                 for (let i = 0; i < currentTest.questions.length; i++) {
                     const question = currentTest.questions[i];
                     const userAnswer = userAnswers[i];
@@ -1317,13 +1333,16 @@
                     // Skip questions that weren't answered
                     if (userAnswer === undefined) continue;
                     
-                    // Get the correct answer
-                    const correctAnswer = question.correct_option;
+                    answeredQuestions.push(i);
                     
-                    console.log(`Question ${i+1}: User answered ${userAnswer}, correct is ${correctAnswer}`);
+                    // Get the correct answer - ensure we're comparing numbers
+                    const correctAnswer = parseInt(question.correct_option);
+                    const userAnswerNum = parseInt(userAnswer);
+                    
+                    console.log(`Question ${i+1}: User answered ${userAnswerNum}, correct is ${correctAnswer}`);
                     
                     // Check if the answer is correct
-                    if (userAnswer === correctAnswer) {
+                    if (userAnswerNum === correctAnswer) {
                         correctCount++;
                         console.log(`Question ${i+1}: CORRECT`);
                     } else {
@@ -1331,19 +1350,24 @@
                     }
                 }
                 
-                // Calculate percentage
+                // Calculate percentage based on total questions
                 const percentage = (correctCount / totalQuestions) * 100;
                 
                 console.log(`Final score: ${correctCount}/${totalQuestions} (${Math.round(percentage)}%)`);
+                console.log(`Answered ${answeredQuestions.length} out of ${totalQuestions} questions`);
                 
-                // Skip server submission and show results directly
-                showResults({
+                // Create the score object
+                const scoreObject = {
                     correct: correctCount,
                     total: totalQuestions,
+                    answered: answeredQuestions.length,
                     percentage: percentage
-                });
+                };
                 
-                // Still send the results to the server for logging
+                // Show results directly
+                showResults(scoreObject);
+                
+                // Send the results to the server for logging
                 fetch(`/api/submit_test?user_id=${userId}`, {
                     method: 'POST',
                     headers: {
@@ -1352,11 +1376,7 @@
                     body: JSON.stringify({
                         test_id: currentTest.id,
                         answers: userAnswers,
-                        local_score: {
-                            correct: correctCount,
-                            total: totalQuestions,
-                            percentage: percentage
-                        },
+                        local_score: scoreObject,
                         user_id: userId
                     })
                 }).catch(error => {
@@ -1369,7 +1389,6 @@
                 // Show home screen on error
                 showScreen(document.getElementById('home-screen'));
             }
-        }
         }
 
         // Show test results
