@@ -446,6 +446,45 @@
                 <!-- Tests will be loaded here -->
             </div>
         </div>
+        
+        <!-- Test Configuration Screen -->
+        <div id="test-config-screen" style="display: none;" class="animate-slide-up">
+            <h3 id="config-test-title">Configure Test</h3>
+            <div class="config-container">
+                <div class="form-group mb-4">
+                    <label id="question-range-label" for="start-question">Question Range</label>
+                    <div class="d-flex align-items-center">
+                        <input type="number" id="start-question" class="form-control me-2" min="1" value="1">
+                        <span class="mx-2">to</span>
+                        <input type="number" id="end-question" class="form-control ms-2" min="1" value="10">
+                    </div>
+                    <small id="question-range-help" class="form-text text-muted">Select which questions to include in the test</small>
+                </div>
+                
+                <div class="form-group mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="shuffle-questions" checked>
+                        <label class="form-check-label" id="shuffle-questions-label" for="shuffle-questions">
+                            Shuffle questions
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="shuffle-answers" checked>
+                        <label class="form-check-label" id="shuffle-answers-label" for="shuffle-answers">
+                            Shuffle answer options
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button id="back-to-tests-btn" class="btn btn-secondary">Back</button>
+                    <button id="start-configured-test-btn" class="btn btn-primary">Start Test</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Quiz Screen -->
         <div id="quiz-screen" style="display: none;" class="animate-slide-up">
@@ -476,6 +515,9 @@
                     <button id="prev-btn" class="btn btn-secondary">Previous</button>
                     <button id="next-btn" class="btn btn-primary">Next</button>
                     <button id="finish-btn" class="btn btn-success" style="display: none;">Finish</button>
+                </div>
+                <div class="mt-3 text-center">
+                    <button id="stop-test-btn" class="btn btn-danger">Stop Test</button>
                 </div>
             </div>
         </div>
@@ -511,31 +553,35 @@
                     // General
                     appName: "MasterQuiz",
                     loading: "MasterQuiz yuklanmoqda...",
-                    welcome: "MasterQuiz-ga xush kelibsiz! Test yechish uchun tanlang.",
-                    noTests: "Sizda hali testlar yo'q. Avval botda test yarating.",
+                    welcome: "MasterQuiz-ga xush kelibsiz! Yechish uchun testni tanlang.",
+                    configureTest: "Testni sozlash",
                     
-                    // Test list
-                    questions: "savollar",
-                    minutes: "daqiqa",
+                    // Buttons
                     startTest: "Testni boshlash",
-                    
-                    // Quiz screen
-                    question: "Savol",
-                    timer: "Vaqt",
-                    previous: "Oldingi",
                     next: "Keyingi",
+                    previous: "Oldingi",
                     finish: "Tugatish",
-                    
-                    // Results screen
-                    quizResults: "Test natijalari",
-                    youScored: "Siz to'pladingiz",
-                    outOf: "/",
-                    reviewAnswers: "Javoblarni ko'rish",
+                    stopTest: "Testni to'xtatish",
+                    review: "Javoblarni ko'rish",
                     backToHome: "Bosh sahifaga",
+                    back: "Orqaga",
                     
-                    // Direct access message
-                    directAccessTitle: "MasterQuiz Telegram ilovasi",
-                    directAccessMessage: "Bu veb-ilova faqat Telegram ichida ishlaydi.",
+                    // Quiz
+                    question: "Savol",
+                    time: "Vaqt",
+                    youScored: "Siz to'pladingiz",
+                    questionRange: "Savollar oralig'i",
+                    questionRangeHelp: "Testga qaysi savollarni kiritishni tanlang",
+                    shuffleQuestions: "Savollarni aralashtirish",
+                    shuffleAnswers: "Javoblarni aralashtirish",
+                    
+                    // Messages
+                    noTests: "Sizda hali testlar yo'q. Avval botda test yarating.",
+                    excellent: "Ajoyib! Siz juda yaxshi bajardingiz!",
+                    goodJob: "Yaxshi ish! Barakalla!",
+                    notBad: "Yomon emas, lekin yaxshiroq bo'lishi mumkin!",
+                    needPractice: "Sizga ko'proq mashq qilish kerak!",
+                    stopConfirm: "Testni to'xtatishni xohlaysizmi? Sizning natijalaringiz yo'qoladi.",
                     directAccessInstructions: "Ilovadan foydalanish uchun:",
                     directAccessStep1: "Telegramda MasterQuiz botini oching",
                     directAccessStep2: "Menyuda \"📱 Web Quiz App\" tugmasini bosing",
@@ -549,30 +595,34 @@
                     appName: "MasterQuiz",
                     loading: "Загрузка MasterQuiz...",
                     welcome: "Добро пожаловать в MasterQuiz! Выберите тест для решения.",
-                    noTests: "У вас пока нет тестов. Сначала создайте тест в боте.",
+                    configureTest: "Настройка теста",
                     
-                    // Test list
-                    questions: "вопросов",
-                    minutes: "мин",
+                    // Buttons
                     startTest: "Начать тест",
-                    
-                    // Quiz screen
-                    question: "Вопрос",
-                    timer: "Время",
-                    previous: "Предыдущий",
                     next: "Следующий",
+                    previous: "Предыдущий",
                     finish: "Завершить",
-                    
-                    // Results screen
-                    quizResults: "Результаты теста",
-                    youScored: "Вы набрали",
-                    outOf: "из",
-                    reviewAnswers: "Просмотр ответов",
+                    stopTest: "Остановить тест",
+                    review: "Просмотреть ответы",
                     backToHome: "На главную",
+                    back: "Назад",
                     
-                    // Direct access message
-                    directAccessTitle: "Телеграм приложение MasterQuiz",
-                    directAccessMessage: "Это веб-приложение предназначено для работы только внутри Telegram.",
+                    // Quiz
+                    question: "Вопрос",
+                    time: "Время",
+                    youScored: "Вы набрали",
+                    questionRange: "Диапазон вопросов",
+                    questionRangeHelp: "Выберите, какие вопросы включить в тест",
+                    shuffleQuestions: "Перемешать вопросы",
+                    shuffleAnswers: "Перемешать варианты ответов",
+                    
+                    // Messages
+                    noTests: "У вас еще нет тестов. Сначала создайте тест в боте.",
+                    excellent: "Отлично! Вы справились великолепно!",
+                    goodJob: "Хорошая работа! Молодец!",
+                    notBad: "Неплохо, но вы можете лучше!",
+                    needPractice: "Вам нужно больше практики!",
+                    stopConfirm: "Вы уверены, что хотите остановить тест? Ваш прогресс будет потерян.",
                     directAccessInstructions: "Чтобы использовать это приложение:",
                     directAccessStep1: "Откройте бот MasterQuiz в Telegram",
                     directAccessStep2: "Нажмите кнопку \"📱 Web Quiz App\" в меню",
@@ -586,28 +636,34 @@
                     appName: "MasterQuiz",
                     loading: "Loading MasterQuiz...",
                     welcome: "Welcome to MasterQuiz! Choose a test to start solving.",
-                    noTests: "You don't have any tests yet. Create a test in the bot first.",
+                    configureTest: "Configure Test",
                     
-                    // Test list
-                    questions: "questions",
-                    minutes: "min",
+                    // Buttons
                     startTest: "Start Test",
-                    
-                    // Quiz screen
-                    question: "Question",
-                    timer: "Time",
-                    previous: "Previous",
                     next: "Next",
+                    previous: "Previous",
                     finish: "Finish",
-                    
-                    // Results screen
-                    quizResults: "Quiz Results",
-                    youScored: "You scored",
-                    outOf: "out of",
-                    reviewAnswers: "Review Answers",
+                    stopTest: "Stop Test",
+                    review: "Review Answers",
                     backToHome: "Back to Home",
+                    back: "Back",
                     
-                    // Direct access message
+                    // Quiz
+                    question: "Question",
+                    time: "Time",
+                    youScored: "You scored",
+                    questionRange: "Question Range",
+                    questionRangeHelp: "Select which questions to include in the test",
+                    shuffleQuestions: "Shuffle questions",
+                    shuffleAnswers: "Shuffle answer options",
+                    
+                    // Messages
+                    noTests: "You don't have any tests yet. Create a test in the bot first.",
+                    excellent: "Excellent! You did great!",
+                    goodJob: "Good job! Well done!",
+                    notBad: "Not bad, but you can do better!",
+                    needPractice: "You need more practice!",
+                    stopConfirm: "Are you sure you want to stop the test? Your progress will be lost.",
                     directAccessTitle: "MasterQuiz Telegram App",
                     directAccessMessage: "This web app is designed to work within Telegram only.",
                     directAccessInstructions: "To use this app:",
@@ -970,15 +1026,84 @@
             });
         }
 
-        // Start a test
+        // Start test configuration
         function startTest(testId) {
-            console.log('Starting test with ID:', testId);
+            console.log('Configuring test with ID:', testId);
             currentTest = tests.find(test => test.id == testId);
             
             if (!currentTest) {
                 alert('Test not found');
                 return;
             }
+            
+            // Set up configuration screen
+            document.getElementById('config-test-title').textContent = `Configure: ${currentTest.name}`;
+            
+            // Set end question to total number of questions
+            const totalQuestions = currentTest.questions.length;
+            document.getElementById('end-question').value = totalQuestions;
+            document.getElementById('end-question').max = totalQuestions;
+            document.getElementById('start-question').max = totalQuestions;
+            
+            // Show configuration screen
+            showScreen(document.getElementById('test-config-screen'));
+        }
+        
+        // Start configured test
+        function startConfiguredTest() {
+            // Get configuration options
+            const startQuestion = parseInt(document.getElementById('start-question').value);
+            const endQuestion = parseInt(document.getElementById('end-question').value);
+            const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+            const shuffleAnswers = document.getElementById('shuffle-answers').checked;
+            
+            // Validate inputs
+            if (startQuestion < 1 || startQuestion > currentTest.questions.length) {
+                alert('Invalid start question number');
+                return;
+            }
+            
+            if (endQuestion < startQuestion || endQuestion > currentTest.questions.length) {
+                alert('Invalid end question number');
+                return;
+            }
+            
+            // Create a copy of the test for modifications
+            const configuredTest = {...currentTest};
+            
+            // Filter questions based on range (convert from 1-based to 0-based indexing)
+            let filteredQuestions = currentTest.questions.slice(startQuestion - 1, endQuestion);
+            
+            // Shuffle questions if requested
+            if (shuffleQuestions) {
+                filteredQuestions = shuffleArray(filteredQuestions);
+            }
+            
+            // Shuffle answer options if requested
+            if (shuffleAnswers) {
+                filteredQuestions = filteredQuestions.map(question => {
+                    if (question.options && Array.isArray(question.options)) {
+                        // Create a copy of the question
+                        const questionCopy = {...question};
+                        
+                        // Track the correct answer
+                        const correctOption = question.options[question.correct_option];
+                        
+                        // Shuffle options
+                        questionCopy.options = shuffleArray([...question.options]);
+                        
+                        // Update correct_option index
+                        questionCopy.correct_option = questionCopy.options.indexOf(correctOption);
+                        
+                        return questionCopy;
+                    }
+                    return question;
+                });
+            }
+            
+            // Update the current test with filtered/shuffled questions
+            configuredTest.questions = filteredQuestions;
+            currentTest = configuredTest;
             
             // Reset state
             currentQuestionIndex = 0;
@@ -997,6 +1122,16 @@
             // Start timer
             startTime = Date.now();
             startTimer();
+        }
+        
+        // Utility function to shuffle an array
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
         }
 
         // Show a specific question
@@ -1158,12 +1293,21 @@
         function showScreen(screen) {
             console.log('Showing screen:', screen.id);
             document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('test-config-screen').style.display = 'none';
             document.getElementById('quiz-screen').style.display = 'none';
             document.getElementById('results-screen').style.display = 'none';
             
             screen.style.display = 'block';
         }
 
+        // Stop the current test and return to home screen
+        function stopTest() {
+            if (confirm('Are you sure you want to stop the test? Your progress will be lost.')) {
+                stopTimer();
+                showScreen(document.getElementById('home-screen'));
+            }
+        }
+        
         // Add event listeners after DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
             // Event listeners for navigation buttons
@@ -1183,6 +1327,10 @@
                 submitTest();
             });
             
+            document.getElementById('stop-test-btn').addEventListener('click', () => {
+                stopTest();
+            });
+            
             document.getElementById('review-btn').addEventListener('click', () => {
                 showScreen(document.getElementById('quiz-screen'));
                 showQuestion(0);
@@ -1190,6 +1338,15 @@
             
             document.getElementById('home-btn').addEventListener('click', () => {
                 showScreen(document.getElementById('home-screen'));
+            });
+            
+            // Test configuration buttons
+            document.getElementById('back-to-tests-btn').addEventListener('click', () => {
+                showScreen(document.getElementById('home-screen'));
+            });
+            
+            document.getElementById('start-configured-test-btn').addEventListener('click', () => {
+                startConfiguredTest();
             });
         });
 
