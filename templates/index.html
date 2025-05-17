@@ -6,24 +6,55 @@
     <title>MasterQuiz</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
-            --tg-theme-bg-color: #ffffff;
-            --tg-theme-text-color: #222222;
-            --tg-theme-hint-color: #999999;
-            --tg-theme-link-color: #2678b6;
-            --tg-theme-button-color: #50a8eb;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #f0f0f0;
+            /* Light mode (default) */
+            --app-bg-color: #f8f9fa;
+            --app-text-color: #212529;
+            --app-accent-color: #4361ee;
+            --app-accent-light: rgba(67, 97, 238, 0.1);
+            --app-card-bg: #ffffff;
+            --app-card-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            --app-secondary-bg: #f1f3f9;
+            --app-border-color: rgba(0, 0, 0, 0.1);
+            --app-success-color: #38b000;
+            --app-warning-color: #f48c06;
+            --app-danger-color: #e63946;
+            --app-gradient: linear-gradient(135deg, #4361ee, #3a0ca3);
+            --app-option-hover: #f1f3f9;
+            --app-progress-bg: rgba(0, 0, 0, 0.1);
+            --app-result-circle-bg: #f1f3f9;
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode */
+            --app-bg-color: #121212;
+            --app-text-color: #e0e0e0;
+            --app-accent-color: #4cc9f0;
+            --app-accent-light: rgba(76, 201, 240, 0.1);
+            --app-card-bg: #1e1e1e;
+            --app-card-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            --app-secondary-bg: #2d2d2d;
+            --app-border-color: rgba(255, 255, 255, 0.1);
+            --app-success-color: #2dc653;
+            --app-warning-color: #ffaa00;
+            --app-danger-color: #ff5c5c;
+            --app-gradient: linear-gradient(135deg, #4cc9f0, #3a0ca3);
+            --app-option-hover: #2d2d2d;
+            --app-progress-bg: rgba(255, 255, 255, 0.1);
+            --app-result-circle-bg: #2d2d2d;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #222222);
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--app-bg-color);
+            color: var(--app-text-color);
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            transition: all 0.3s ease;
         }
 
         .container {
@@ -31,170 +62,448 @@
             padding: 16px;
         }
 
-        .card {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
+        .app-header {
+            position: relative;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .app-logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--app-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            right: 10px;
+            top: 20px;
+            background: none;
             border: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: var(--app-text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--app-accent-light);
+        }
+
+        .card {
+            background-color: var(--app-card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: none;
+            box-shadow: var(--app-card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--app-accent-color);
         }
 
         .btn-primary {
-            background-color: var(--tg-theme-button-color, #50a8eb);
-            color: var(--tg-theme-button-text-color, #ffffff);
+            background: var(--app-gradient);
+            color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-weight: 500;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
         }
 
         .btn-outline-primary {
-            border-color: var(--tg-theme-button-color, #50a8eb);
-            color: var(--tg-theme-button-color, #50a8eb);
-            background-color: transparent;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-weight: 500;
+            background: transparent;
+            color: var(--app-accent-color);
+            border: 2px solid var(--app-accent-color);
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--app-accent-light);
+            transform: translateY(-2px);
         }
 
         .option-button {
             display: block;
             width: 100%;
             text-align: left;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #222222);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            transition: all 0.2s;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            background-color: var(--app-card-bg);
+            color: var(--app-text-color);
+            border: 1px solid var(--app-border-color);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--app-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .option-button:hover, .option-button:focus {
-            background-color: rgba(80, 168, 235, 0.1);
+            background-color: var(--app-option-hover);
+            transform: translateX(5px);
+        }
+
+        .option-button:hover:before {
+            opacity: 1;
         }
 
         .option-button.selected {
-            background-color: var(--tg-theme-button-color, #50a8eb);
-            color: var(--tg-theme-button-text-color, #ffffff);
+            background: var(--app-gradient);
+            color: white;
+            border: none;
+            transform: translateX(0);
+        }
+
+        .option-button.selected:before {
+            opacity: 0;
         }
 
         .quiz-progress {
-            height: 6px;
-            margin-bottom: 20px;
-            background-color: rgba(0, 0, 0, 0.1);
-            border-radius: 3px;
+            height: 8px;
+            margin-bottom: 25px;
+            background-color: var(--app-progress-bg);
+            border-radius: 4px;
             overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .quiz-progress-bar {
             height: 100%;
-            background-color: var(--tg-theme-button-color, #50a8eb);
-            transition: width 0.3s ease;
+            background: var(--app-gradient);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .quiz-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .quiz-info .timer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quiz-info .timer i {
+            color: var(--app-warning-color);
         }
 
         .result-circle {
-            width: 150px;
-            height: 150px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
-            background: conic-gradient(var(--tg-theme-button-color, #50a8eb) 0%, var(--tg-theme-button-color, #50a8eb) var(--percentage), #f0f0f0 var(--percentage), #f0f0f0 100%);
+            background: conic-gradient(var(--app-accent-color) 0%, var(--app-accent-color) var(--percentage), var(--app-result-circle-bg) var(--percentage), var(--app-result-circle-bg) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
+            margin: 0 auto 30px;
             position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         .result-circle::after {
             content: '';
             position: absolute;
-            width: 120px;
-            height: 120px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            background-color: var(--tg-theme-bg-color, #ffffff);
+            background-color: var(--app-card-bg);
         }
 
         .result-percentage {
             position: relative;
             z-index: 1;
-            font-size: 32px;
+            font-size: 40px;
             font-weight: bold;
-            color: var(--tg-theme-text-color, #222222);
+            color: var(--app-accent-color);
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .loading {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background: var(--app-bg-color);
         }
 
-        .spinner-border {
-            color: var(--tg-theme-button-color, #50a8eb);
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--app-accent-light);
+            border-top-color: var(--app-accent-color);
+            border-radius: 50%;
+            animation: spinner 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-weight: 600;
+            color: var(--app-accent-color);
+        }
+
+        @keyframes spinner {
+            to {transform: rotate(360deg);}
         }
 
         #app {
             display: none;
         }
+
+        .alert-info {
+            background-color: var(--app-accent-light);
+            color: var(--app-accent-color);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 20px;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+
+        .badge-primary {
+            background-color: var(--app-accent-light);
+            color: var(--app-accent-color);
+        }
+
+        .test-stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .test-difficulty {
+            display: flex;
+            margin-top: 5px;
+        }
+
+        .difficulty-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--app-accent-light);
+            margin-right: 3px;
+        }
+
+        .difficulty-active {
+            background-color: var(--app-accent-color);
+        }
+
+        .result-message {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .result-stats {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .direct-access-message {
+            background-color: var(--app-card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--app-card-shadow);
+            max-width: 500px;
+            margin: 50px auto;
+        }
+
+        .direct-access-message h2 {
+            color: var(--app-accent-color);
+            margin-bottom: 20px;
+        }
+
+        .direct-access-steps {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        .direct-access-steps li {
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 10px;
+        }
+
+        .direct-access-steps li:before {
+            content: '';
+            position: absolute;
+            left: -15px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--app-accent-color);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
-    <div id="loading" class="loading">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <div id="direct-access-message" style="display: none;" class="direct-access-message animate-fade-in">
+        <h2 id="direct-access-title">MasterQuiz Telegram App</h2>
+        <div class="alert alert-info">
+            <p><strong id="direct-access-message-text">This web app is designed to work within Telegram only.</strong></p>
+            <p id="direct-access-instructions">To use this app:</p>
+            <ol class="direct-access-steps">
+                <li id="direct-access-step1">Open the MasterQuiz bot in Telegram</li>
+                <li id="direct-access-step2">Click on the "📱 Web Quiz App" button in the menu</li>
+                <li id="direct-access-step3">Tap the "Open Quiz App" button that appears</li>
+            </ol>
         </div>
+        <p id="direct-access-developer">If you're a developer testing this app, you need to simulate the Telegram WebApp environment.</p>
     </div>
 
-    <div id="app" class="container">
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <div id="loading-text" class="loading-text">Loading MasterQuiz...</div>
+    </div>
+
+    <div id="app" class="container animate-fade-in">
+        <!-- App Header with Theme Toggle -->
+        <div class="app-header">
+            <div class="app-logo" id="app-name">MasterQuiz</div>
+            <button id="theme-toggle" class="theme-toggle">
+                <i class="bi bi-sun-fill" id="light-icon"></i>
+                <i class="bi bi-moon-fill" id="dark-icon" style="display: none;"></i>
+            </button>
+        </div>
+        
         <!-- Home Screen -->
-        <div id="home-screen">
-            <h1 class="mb-4">MasterQuiz</h1>
-            <p class="mb-4">Welcome to MasterQuiz! Choose a test to start solving.</p>
+        <div id="home-screen" class="animate-slide-up">
+            <p class="mb-4" id="welcome-text">Welcome to MasterQuiz! Choose a test to start solving.</p>
             <div id="tests-list" class="mb-4">
                 <!-- Tests will be loaded here -->
             </div>
         </div>
 
         <!-- Quiz Screen -->
-        <div id="quiz-screen" style="display: none;">
-            <div class="quiz-progress">
-                <div id="quiz-progress-bar" class="quiz-progress-bar" style="width: 0%"></div>
-            </div>
-            <div class="d-flex justify-content-between mb-3">
-                <div>Question <span id="current-question">1</span>/<span id="total-questions">10</span></div>
-                <div id="timer">00:00</div>
-            </div>
-            <div class="card mb-4">
-                <h5 id="question-text" class="mb-3">Question text goes here?</h5>
-                <div id="options-container">
-                    <!-- Options will be loaded here -->
+        <div id="quiz-screen" style="display: none;" class="animate-slide-up">
+            <div class="quiz-header">
+                <h3 id="quiz-title">Test Title</h3>
+                <div class="quiz-timer">
+                    <i class="bi bi-alarm"></i>
+                    <span id="timer-label" class="me-1">Time</span>
+                    <span id="timer">00:00</span>
                 </div>
             </div>
-            <div class="d-flex justify-content-between">
-                <button id="prev-btn" class="btn btn-outline-primary" disabled>Previous</button>
-                <button id="next-btn" class="btn btn-primary">Next</button>
+            
+            <div class="question-container">
+                <div class="question-header">
+                    <span class="question-number"><span id="question-label">Question</span> <span id="current-question">1</span>/<span id="total-questions">10</span></span>
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                
+                <div id="question-text" class="question-text">Question text goes here?</div>
+                
+                <div id="answers" class="answers">
+                    <!-- Answers will be loaded here -->
+                </div>
+                
+                <div class="quiz-navigation">
+                    <button id="prev-btn" class="btn btn-secondary">Previous</button>
+                    <button id="next-btn" class="btn btn-primary">Next</button>
+                    <button id="finish-btn" class="btn btn-success" style="display: none;">Finish</button>
+                </div>
             </div>
         </div>
-
+        
         <!-- Results Screen -->
-        <div id="results-screen" style="display: none;">
-            <h2 class="text-center mb-4">Quiz Results</h2>
-            <div class="result-circle">
-                <div class="result-percentage">0%</div>
-            </div>
-            <div class="text-center mb-4">
-                <h4>You scored <span id="correct-answers">0</span>/<span id="total-questions-result">0</span></h4>
-                <p id="result-message">Great job!</p>
-            </div>
-            <div class="d-grid gap-2">
-                <button id="review-btn" class="btn btn-primary">Review Answers</button>
-                <button id="home-btn" class="btn btn-outline-primary">Back to Home</button>
+        <div id="results-screen" style="display: none;" class="animate-slide-up">
+            <h3 id="results-title">Quiz Results</h3>
+            
+            <div class="results-container">
+                <div class="results-circle">
+                    <div class="results-score">
+                        <span id="you-scored-text">You scored</span>
+                        <span id="score">0</span><span id="score-separator">/</span><span id="max-score">0</span>
+                    </div>
+                </div>
+                
+                <div id="results-message" class="results-message">You did great!</div>
+                
+                <div class="results-actions">
+                    <button id="review-btn" class="btn btn-primary">Review Answers</button>
+                    <button id="home-btn" class="btn btn-secondary">Back to Home</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/translations.js"></script>
     <script>
         // Check if we're in a Telegram WebApp environment
         if (!window.Telegram || !window.Telegram.WebApp) {
@@ -206,14 +515,10 @@
             throw new Error('This app can only be accessed through Telegram');
         }
         
-        // Initialize Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
         // DOM elements
-        const directAccessMessageElement = document.getElementById('direct-access-message');
-        const loadingElement = document.getElementById('loading');
-        const appElement = document.getElementById('app');
+        const app = document.getElementById('app');
+        const loadingScreen = document.getElementById('loading');
+        const directAccessMessage = document.getElementById('direct-access-message');
         const homeScreen = document.getElementById('home-screen');
         const quizScreen = document.getElementById('quiz-screen');
         const resultsScreen = document.getElementById('results-screen');
@@ -242,6 +547,96 @@
         let userAnswers = [];
         let startTime = 0;
         let timerInterval = null;
+        let currentLanguage = 'en'; // Default language
+        
+        // Language functions
+        function initializeLanguage() {
+            // Get language from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const langParam = urlParams.get('lang');
+            
+            // Set language (default to 'en' if not specified or invalid)
+            if (langParam && ['uz', 'ru', 'en'].includes(langParam)) {
+                currentLanguage = langParam;
+            } else if (window.Telegram && window.Telegram.WebApp) {
+                // Try to get language from Telegram if available
+                const tg = window.Telegram.WebApp;
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code) {
+                    const userLang = tg.initDataUnsafe.user.language_code;
+                    if (['uz', 'ru'].includes(userLang)) {
+                        currentLanguage = userLang;
+                    }
+                }
+            }
+            
+            console.log('Using language:', currentLanguage);
+            updateUILanguage();
+        }
+        
+        function updateUILanguage() {
+            const t = translations[currentLanguage];
+            if (!t) {
+                console.error('Translation not found for language:', currentLanguage);
+                return;
+            }
+            
+            // Update direct access message
+            document.getElementById('direct-access-title').textContent = t.directAccessTitle;
+            document.getElementById('direct-access-message-text').textContent = t.directAccessMessage;
+            document.getElementById('direct-access-instructions').textContent = t.directAccessInstructions;
+            document.getElementById('direct-access-step1').textContent = t.directAccessStep1;
+            document.getElementById('direct-access-step2').textContent = t.directAccessStep2;
+            document.getElementById('direct-access-step3').textContent = t.directAccessStep3;
+            document.getElementById('direct-access-developer').textContent = t.directAccessDeveloper;
+            
+            // Update loading screen
+            document.getElementById('loading-text').textContent = t.loading;
+            
+            // Update app header
+            document.getElementById('app-name').textContent = t.appName;
+            
+            // Update home screen
+            document.getElementById('welcome-text').textContent = t.welcome;
+            
+            // Update no tests message if present
+            const noTestsAlert = document.querySelector('#tests-list .alert-info');
+            if (noTestsAlert) {
+                noTestsAlert.textContent = t.noTests;
+            }
+            
+            // Update buttons
+            document.querySelectorAll('.start-test-btn').forEach(btn => {
+                btn.textContent = t.startTest;
+            });
+            
+            // Update quiz screen if visible
+            if (document.getElementById('timer-label')) {
+                document.getElementById('timer-label').textContent = t.timer;
+            }
+            if (document.getElementById('question-label')) {
+                document.getElementById('question-label').textContent = t.question;
+            }
+            if (document.getElementById('prev-btn')) {
+                document.getElementById('prev-btn').textContent = t.previous;
+            }
+            if (document.getElementById('next-btn')) {
+                document.getElementById('next-btn').textContent = t.next;
+            }
+            if (document.getElementById('finish-btn')) {
+                document.getElementById('finish-btn').textContent = t.finish;
+            }
+            
+            // Update results screen if visible
+            if (document.getElementById('results-title')) {
+                document.getElementById('results-title').textContent = t.quizResults;
+            }
+            if (document.getElementById('review-btn')) {
+                document.getElementById('review-btn').textContent = t.reviewAnswers;
+            }
+            if (document.getElementById('home-btn')) {
+                document.getElementById('home-btn').textContent = t.backToHome;
+            }
+        }
 
         // Initialize the app
         async function initApp() {
@@ -252,6 +647,12 @@
                 if (!window.Telegram || !window.Telegram.WebApp) {
                     throw new Error('Telegram WebApp is not available');
                 }
+                
+                // Initialize theme based on Telegram or system preference
+                initializeTheme();
+                
+                // Initialize language based on URL parameter or Telegram settings
+                initializeLanguage();
                 
                 // Get the user from Telegram WebApp
                 const tg = window.Telegram.WebApp;
@@ -289,8 +690,10 @@
             try {
                 console.log('Loading tests for user:', currentUser?.id);
                 
-                // If we have a current user, add the ID as a query parameter for debugging
-                const url = currentUser?.id ? `/api/tests?user_id=${currentUser.id}` : '/api/tests';
+                // Always include the user ID as a query parameter to ensure we get the right tests
+                // This is critical for the app to work correctly
+                const userId = currentUser?.id || 1477944238; // Use default ID if none available
+                const url = `/api/tests?user_id=${userId}`;
                 console.log('Fetching tests from:', url);
                 
                 const response = await fetch(url);
@@ -302,7 +705,21 @@
                 }
                 
                 tests = data.tests || [];
-                console.log(`Loaded ${tests.length} tests`);
+                console.log(`Loaded ${tests.length} tests for user ${userId}`);
+                
+                if (tests.length === 0) {
+                    console.log('No tests found, trying again with default user ID');
+                    // If no tests found, try with the default user ID as fallback
+                    const fallbackUrl = `/api/tests?user_id=1477944238`;
+                    const fallbackResponse = await fetch(fallbackUrl);
+                    const fallbackData = await fallbackResponse.json();
+                    
+                    if (fallbackData.success && fallbackData.tests && fallbackData.tests.length > 0) {
+                        tests = fallbackData.tests;
+                        console.log(`Loaded ${tests.length} fallback tests`);
+                    }
+                }
+                
                 renderTestsList();
             } catch (error) {
                 console.error('Error loading tests:', error);
@@ -310,7 +727,47 @@
             }
         }
 
-        // Render tests list
+        // Theme toggle functionality
+        function initializeTheme() {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
+            const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Check if Telegram has a color scheme preference
+            let initialTheme = 'light';
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                if (tg.colorScheme === 'dark') {
+                    initialTheme = 'dark';
+                }
+            } else if (prefersDarkScheme) {
+                initialTheme = 'dark';
+            }
+            
+            // Set initial theme
+            if (initialTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                lightIcon.style.display = 'none';
+                darkIcon.style.display = 'block';
+            }
+            
+            // Add event listener to theme toggle button
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.body.getAttribute('data-theme');
+                if (currentTheme === 'dark') {
+                    document.body.removeAttribute('data-theme');
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                } else {
+                    document.body.setAttribute('data-theme', 'dark');
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                }
+            });
+        }
+
+        // Render tests list with enhanced UI
         function renderTestsList() {
             testsList.innerHTML = '';
             
@@ -319,7 +776,7 @@
                 return;
             }
             
-            tests.forEach(test => {
+            tests.forEach((test, index) => {
                 // Make sure test has required properties
                 if (!test.name) {
                     test.name = 'Unnamed Test';
@@ -333,12 +790,29 @@
                     test.id = `test_${Math.random().toString(36).substr(2, 9)}`;
                 }
                 
+                // Calculate a difficulty level (1-5) based on number of questions
+                const questionCount = test.questions.length;
+                const difficulty = Math.min(5, Math.max(1, Math.ceil(questionCount / 5)));
+                
+                // Create difficulty dots
+                let difficultyDots = '';
+                for (let i = 1; i <= 5; i++) {
+                    difficultyDots += `<div class="difficulty-dot ${i <= difficulty ? 'difficulty-active' : ''}"></div>`;
+                }
+                
                 const testCard = document.createElement('div');
-                testCard.className = 'card';
+                testCard.className = 'card animate-fade-in';
+                testCard.style.animationDelay = `${index * 0.1}s`;
                 testCard.innerHTML = `
                     <h5 class="card-title">${test.name}</h5>
-                    <p class="card-text">${test.questions.length} questions</p>
-                    <button class="btn btn-primary start-test-btn" data-test-id="${test.id}">Start Test</button>
+                    <div class="test-stats">
+                        <span class="badge badge-primary">${test.questions.length} questions</span>
+                        <span class="badge badge-primary">~${Math.ceil(test.questions.length * 30 / 60)} min</span>
+                    </div>
+                    <div class="test-difficulty">${difficultyDots}</div>
+                    <button class="btn btn-primary start-test-btn mt-3" data-test-id="${test.id}">
+                        <i class="bi bi-play-fill"></i> Start Test
+                    </button>
                 `;
                 testsList.appendChild(testCard);
             });

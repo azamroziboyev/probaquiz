@@ -56,6 +56,8 @@ def get_user_tests(user_id):
     
     # Try multiple locations for the user_tests.json file
     possible_paths = [
+        # First check in the current directory (this is the copy we just made)
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_tests.json'),
         # Path relative to the current directory
         'user_tests.json',
         # Path relative to the parent directory
@@ -105,7 +107,14 @@ def get_user_tests(user_id):
 # Main route for the web app
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Get language from query parameter if provided
+    lang = request.args.get('lang', 'en')
+    
+    # Validate language (only allow 'uz', 'ru', or 'en')
+    if lang not in ['uz', 'ru', 'en']:
+        lang = 'en'
+    
+    return render_template('index.html', lang=lang)
 
 # API endpoint to validate Telegram user and get their tests
 @app.route('/api/validate', methods=['POST'])
