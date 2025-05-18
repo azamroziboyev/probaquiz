@@ -304,15 +304,54 @@ def submit_test():
         print(f"Total correct: {correct_count} out of {total_questions}")
         percentage = (correct_count / total_questions) * 100 if total_questions > 0 else 0
     
-    # TODO: Save results to database (would need to integrate with the bot's database)
+    # Save results to the bot's database
+    try:
+        # Import the database functions from the parent directory
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from database import save_test_result
+        import asyncio
+        import datetime
+        
+        # Calculate points (same formula as in the bot)
+        points_100 = round((correct_count / total_questions) * 100) if total_questions > 0 else 0
+        
+        # Get the current date and time
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Get the test name
+        test_name = test.get('name', f"Test {test_id}")
+        
+        print(f"Saving test result to database: User {user_id}, Test '{test_name}', Score {correct_count}/{total_questions} ({percentage}%)")
+        
+        # Save the result to the database
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(save_test_result(
+            user_id=int(user_id),
+            test_name=test_name,
+            date=current_date,
+            correct=correct_count,
+            total=total_questions,
+            percent=percentage,
+            points=points_100
+        ))
+        loop.close()
+        
+        print(f"Test result saved successfully for user {user_id}")
+    except Exception as e:
+        print(f"Error saving test result to database: {e}")
     
     return jsonify({
         'success': True,
         'score': {
             'correct': correct_count,
             'total': total_questions,
-            'percentage': percentage
-        }
+            'percentage': percentage,
+            'points': points_100
+        },
+        'saved_to_database': True
     })
 
 if __name__ == "__main__":

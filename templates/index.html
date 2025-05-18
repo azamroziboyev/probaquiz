@@ -342,10 +342,48 @@
         }
 
         .result-message {
-            font-weight: 600;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: 20px 0;
             text-align: center;
+            color: var(--app-text-color);
+            background-color: var(--app-card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--app-card-shadow);
+        }
+        
+        .result-header h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--app-accent-color);
+            text-align: center;
+        }
+        
+        .result-details {
+            text-align: left;
+        }
+        
+        .result-details p {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        .result-details code {
+            background-color: var(--app-secondary-bg);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--app-accent-color);
+        }
+        
+        .result-motivation {
+            margin-top: 20px !important;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem !important;
+            color: var(--app-accent-color);
         }
 
         .result-stats {
@@ -1381,18 +1419,47 @@
                 // Get the translations for the current language
                 const t = translations[currentLanguage] || translations.en;
                 
-                // Set appropriate message based on score
+                // Calculate percentage (ensure it's a number)
+                const percentage = typeof score.percentage === 'number' ? score.percentage : 
+                                  (score.correct / score.total) * 100;
+                
+                // Create a progress bar
+                const barLength = 10;
+                const filledLength = Math.round((barLength * score.correct) / score.total);
+                const progressBar = '▓'.repeat(filledLength) + '░'.repeat(barLength - filledLength);
+                
+                // Set appropriate message and emoji based on score
+                let performanceEmoji = '🎯';
+                let resultMessageText = '';
+                
+                if (percentage >= 90) {
+                    performanceEmoji = '🏆';
+                    resultMessageText = t.excellent || 'Excellent! You did great!';
+                } else if (percentage >= 70) {
+                    performanceEmoji = '🌟';
+                    resultMessageText = t.goodJob || 'Good job! Well done!';
+                } else if (percentage >= 50) {
+                    performanceEmoji = '👍';
+                    resultMessageText = t.notBad || 'Not bad, but you can do better!';
+                } else {
+                    performanceEmoji = '📚';
+                    resultMessageText = t.needPractice || 'You need more practice!';
+                }
+                
+                // Update the results message
                 const resultMessage = document.getElementById('results-message');
                 if (resultMessage) {
-                    if (score.percentage >= 80) {
-                        resultMessage.textContent = t.excellent || 'Excellent! You did great!';
-                    } else if (score.percentage >= 60) {
-                        resultMessage.textContent = t.goodJob || 'Good job! Well done!';
-                    } else if (score.percentage >= 40) {
-                        resultMessage.textContent = t.notBad || 'Not bad, but you can do better!';
-                    } else {
-                        resultMessage.textContent = t.needPractice || 'You need more practice!';
-                    }
+                    resultMessage.innerHTML = `
+                        <div class="result-header">
+                            <h3>${performanceEmoji} ${t.quizResults || 'QUIZ RESULTS'} ${performanceEmoji}</h3>
+                        </div>
+                        <div class="result-details">
+                            <p>📊 <b>${t.percentage || 'Percentage'}:</b> <code>${percentage.toFixed(1)}%</code></p>
+                            <p>${progressBar}</p>
+                            <p>💯 <b>${t.points || 'Points'}:</b> <code>${score.points || Math.round(percentage)}/100</code></p>
+                            <p class="result-motivation">${resultMessageText}</p>
+                        </div>
+                    `;
                 }
                 
                 // Update the you-scored-text with translation
@@ -1434,6 +1501,26 @@
                         // Implement review functionality if needed
                         alert('Review functionality not implemented yet');
                     };
+                }
+                
+                // Try to send the results to Telegram if WebApp is available
+                if (window.Telegram && window.Telegram.WebApp) {
+                    try {
+                        const tg = window.Telegram.WebApp;
+                        // Send the results back to the bot
+                        tg.sendData(JSON.stringify({
+                            action: 'test_completed',
+                            test_id: currentTest.id,
+                            test_name: currentTest.name,
+                            correct: score.correct,
+                            total: score.total,
+                            percentage: percentage,
+                            points: score.points || Math.round(percentage)
+                        }));
+                        console.log('Sent results to Telegram bot');
+                    } catch (e) {
+                        console.error('Error sending results to Telegram:', e);
+                    }
                 }
             } catch (error) {
                 console.error('Error showing results:', error);
