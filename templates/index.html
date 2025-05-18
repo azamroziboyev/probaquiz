@@ -937,31 +937,13 @@
                 return;
             }
             
-            // Create icons if they don't exist
-            let lightIcon = document.getElementById('light-icon');
-            let darkIcon = document.getElementById('dark-icon');
+            // Get references to the icons
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
             
             if (!lightIcon || !darkIcon) {
-                console.log('Creating theme icons...');
-                // Clear the button content
-                themeToggleBtn.innerHTML = '';
-                
-                // Create light icon
-                lightIcon = document.createElement('span');
-                lightIcon.id = 'light-icon';
-                lightIcon.innerHTML = '☀️';
-                lightIcon.style.fontSize = '1.2rem';
-                
-                // Create dark icon
-                darkIcon = document.createElement('span');
-                darkIcon.id = 'dark-icon';
-                darkIcon.innerHTML = '🌙';
-                darkIcon.style.fontSize = '1.2rem';
-                darkIcon.style.display = 'none';
-                
-                // Add icons to button
-                themeToggleBtn.appendChild(lightIcon);
-                themeToggleBtn.appendChild(darkIcon);
+                console.error('Theme icons not found!');
+                return;
             }
             
             const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -982,8 +964,12 @@
             // Set initial theme
             if (initialTheme === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
-                if (lightIcon) lightIcon.style.display = 'none';
-                if (darkIcon) darkIcon.style.display = 'block';
+                lightIcon.style.display = 'none';
+                darkIcon.style.display = 'block';
+            } else {
+                document.body.removeAttribute('data-theme');
+                lightIcon.style.display = 'block';
+                darkIcon.style.display = 'none';
             }
             
             // Add event listener to theme toggle button
@@ -994,17 +980,34 @@
                 if (currentTheme === 'dark') {
                     // Switch to light theme
                     document.body.removeAttribute('data-theme');
-                    if (lightIcon) lightIcon.style.display = 'block';
-                    if (darkIcon) darkIcon.style.display = 'none';
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                    localStorage.setItem('theme', 'light');
                     console.log('Switched to light theme');
                 } else {
                     // Switch to dark theme
                     document.body.setAttribute('data-theme', 'dark');
-                    if (lightIcon) lightIcon.style.display = 'none';
-                    if (darkIcon) darkIcon.style.display = 'block';
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                    localStorage.setItem('theme', 'dark');
                     console.log('Switched to dark theme');
                 }
             });
+            
+            // Check for saved theme preference in localStorage
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                console.log('Found saved theme preference:', savedTheme);
+                if (savedTheme === 'dark') {
+                    document.body.setAttribute('data-theme', 'dark');
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                } else {
+                    document.body.removeAttribute('data-theme');
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                }
+            }
             
             console.log('Theme initialization complete');
         }
@@ -1296,9 +1299,10 @@
             clearInterval(timerInterval);
         }
 
-        // Submit the test
+        // Submit test and show results
         function submitTest() {
             try {
+                console.log('Submitting test...');
                 stopTimer();
                 
                 // Simple score calculation
@@ -1309,6 +1313,8 @@
                 for (let i = 0; i < currentTest.questions.length; i++) {
                     const question = currentTest.questions[i];
                     const userAnswer = userAnswers[i];
+                    
+                    console.log(`Question ${i+1}: User answer: ${userAnswer}, Correct: ${question.correct_option}`);
                     
                     // Skip questions that weren't answered
                     if (userAnswer === undefined) continue;
@@ -1321,6 +1327,7 @@
                 
                 // Calculate percentage
                 const percentage = (correctCount / totalQuestions) * 100;
+                console.log(`Score: ${correctCount}/${totalQuestions} (${percentage.toFixed(1)}%)`);
                 
                 // Show results directly
                 showResults({
@@ -1332,6 +1339,8 @@
                 // Try to send results to server
                 try {
                     const userId = currentUser?.id || 1477944238;
+                    console.log(`Sending results to server for user ${userId}...`);
+                    
                     fetch(`/api/submit_test?user_id=${userId}`, {
                         method: 'POST',
                         headers: {
@@ -1340,15 +1349,22 @@
                         body: JSON.stringify({
                             test_id: currentTest.id,
                             answers: userAnswers,
-                            user_id: userId
+                            user_id: userId,
+                            correct: correctCount,
+                            total: totalQuestions,
+                            percentage: percentage
                         })
-                    }).catch(e => console.error('Server error:', e));
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Server response:', data);
+                    })
+                    .catch(e => console.error('Server error:', e));
                 } catch (e) {
                     console.error('Failed to send results to server:', e);
                 }
             } catch (error) {
                 console.error('Error submitting test:', error);
-                alert('Error calculating results');
                 showScreen(document.getElementById('home-screen'));
             }
         }
@@ -1356,32 +1372,67 @@
         // Show test results
         function showResults(score) {
             try {
+                console.log('Showing results:', score);
+                
                 // Update the score elements
                 document.getElementById('score').textContent = score.correct;
                 document.getElementById('max-score').textContent = score.total;
+                
+                // Get the translations for the current language
+                const t = translations[currentLanguage] || translations.en;
                 
                 // Set appropriate message based on score
                 const resultMessage = document.getElementById('results-message');
                 if (resultMessage) {
                     if (score.percentage >= 80) {
-                        resultMessage.textContent = 'Excellent! You did great!';
+                        resultMessage.textContent = t.excellent || 'Excellent! You did great!';
                     } else if (score.percentage >= 60) {
-                        resultMessage.textContent = 'Good job! Well done!';
+                        resultMessage.textContent = t.goodJob || 'Good job! Well done!';
                     } else if (score.percentage >= 40) {
-                        resultMessage.textContent = 'Not bad, but you can do better!';
+                        resultMessage.textContent = t.notBad || 'Not bad, but you can do better!';
                     } else {
-                        resultMessage.textContent = 'You need more practice!';
+                        resultMessage.textContent = t.needPractice || 'You need more practice!';
                     }
+                }
+                
+                // Update the you-scored-text with translation
+                const youScoredText = document.getElementById('you-scored-text');
+                if (youScoredText) {
+                    youScoredText.textContent = t.youScored || 'You scored';
+                }
+                
+                // Update the score-separator with translation
+                const scoreSeparator = document.getElementById('score-separator');
+                if (scoreSeparator) {
+                    scoreSeparator.textContent = t.outOf || '/';
+                }
+                
+                // Update button texts
+                const reviewBtn = document.getElementById('review-btn');
+                if (reviewBtn) {
+                    reviewBtn.textContent = t.review || 'Review Answers';
+                }
+                
+                const homeBtn = document.getElementById('home-btn');
+                if (homeBtn) {
+                    homeBtn.textContent = t.backToHome || 'Back to Home';
                 }
                 
                 // Show the results screen
                 showScreen(document.getElementById('results-screen'));
                 
                 // Add event listener to home button
-                const homeBtn = document.getElementById('home-btn');
                 if (homeBtn) {
                     homeBtn.onclick = function() {
                         showScreen(document.getElementById('home-screen'));
+                    };
+                }
+                
+                // Add event listener to review button
+                if (reviewBtn) {
+                    reviewBtn.onclick = function() {
+                        // Implement review functionality if needed
+                        alert('Review functionality not implemented yet');
                     };
                 }
             } catch (error) {
