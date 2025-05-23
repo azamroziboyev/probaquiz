@@ -898,6 +898,17 @@
             try {
                 console.log('Loading tests for user:', currentUser?.id);
                 
+                // First, force a sync with the main bot's tests
+                console.log('Syncing tests with main bot...');
+                try {
+                    const syncResponse = await fetch('/api/sync');
+                    const syncData = await syncResponse.json();
+                    console.log('Sync response:', syncData);
+                } catch (syncError) {
+                    console.error('Error syncing tests:', syncError);
+                    // Continue even if sync fails
+                }
+                
                 // Always include the user ID as a query parameter to ensure we get the right tests
                 // This is critical for the app to work correctly
                 const userId = currentUser?.id || 1477944238; // Use default ID if none available

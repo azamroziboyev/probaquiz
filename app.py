@@ -48,22 +48,50 @@ def validate_telegram_webapp(init_data):
         print(f"Error validating Telegram WebApp data: {e}")
         return False, None
 
+# Function to sync user_tests.json files
+def sync_user_tests_files():
+    try:
+        main_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user_tests.json')
+        webapp_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_tests.json')
+        
+        # Check if the main file exists
+        if os.path.exists(main_file_path):
+            # Read the main file
+            with open(main_file_path, 'r', encoding='utf-8') as f:
+                tests_data = json.load(f)
+            
+            # Write to the webapp file
+            with open(webapp_file_path, 'w', encoding='utf-8') as f:
+                json.dump(tests_data, f, ensure_ascii=False, indent=4)
+            
+            print(f"Successfully synced user_tests.json files")
+            return True
+        else:
+            print(f"Main user_tests.json file not found at {main_file_path}")
+            return False
+    except Exception as e:
+        print(f"Error syncing user_tests.json files: {e}")
+        return False
+
 # Function to get tests for a user
 def get_user_tests(user_id):
+    # First, try to sync the files
+    sync_user_tests_files()
+    
     # Convert user_id to string if it's not already
     user_id_str = str(user_id)
     print(f"Getting tests for user: {user_id_str}")
     
     # Try multiple locations for the user_tests.json file
     possible_paths = [
-        # First check in the current directory (this is the copy we just made)
+        # First check the parent directory (main bot directory) - this is the primary source
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user_tests.json'),
+        # Path relative to the parent directory
+        '../user_tests.json',
+        # Then check in the current directory (this is the copy we just made)
         os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_tests.json'),
         # Path relative to the current directory
         'user_tests.json',
-        # Path relative to the parent directory
-        '../user_tests.json',
-        # Absolute path based on current file location
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'user_tests.json'),
         # Railway deployment path
         '/app/user_tests.json'
     ]
@@ -165,10 +193,29 @@ def validate_user():
             'message': f'Error processing request: {str(e)}'
         }), 500
 
+# API endpoint to force sync of test files
+@app.route('/api/sync', methods=['GET'])
+def sync_tests():
+    try:
+        success = sync_user_tests_files()
+        return jsonify({
+            'success': success,
+            'message': 'Tests synced successfully' if success else 'Failed to sync tests'
+        })
+    except Exception as e:
+        print(f"Error in sync_tests: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error syncing tests: {str(e)}'
+        }), 500
+
 # API endpoint to get tests for the authenticated user
 @app.route('/api/tests', methods=['GET'])
 def get_tests():
     try:
+        # Always sync tests first
+        sync_user_tests_files()
+        
         # Get user_id from session or query parameter
         user_id = session.get('user_id')
         
