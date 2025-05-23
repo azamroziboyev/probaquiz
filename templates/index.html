@@ -593,6 +593,8 @@
                     loading: "MasterQuiz yuklanmoqda...",
                     welcome: "MasterQuiz-ga xush kelibsiz! Yechish uchun testni tanlang.",
                     configureTest: "Testni sozlash",
+                    noTests: "Sizda hech qanday test yo'q.",
+                    createTestInstructions: "Test yaratish uchun asosiy Telegram botdan foydalaning va ular bu yerda paydo bo'ladi.",
                     
                     // Buttons
                     startTest: "Testni boshlash",
@@ -633,7 +635,9 @@
                     appName: "MasterQuiz",
                     loading: "Загрузка MasterQuiz...",
                     welcome: "Добро пожаловать в MasterQuiz! Выберите тест для решения.",
-                    configureTest: "Настройка теста",
+                    configureTest: "Настроить тест",
+                    noTests: "У вас нет тестов.",
+                    createTestInstructions: "Чтобы создать тесты, используйте основного Telegram бота, и они появятся здесь.",
                     
                     // Buttons
                     startTest: "Начать тест",
@@ -929,7 +933,17 @@
                 // Display a message if no tests are found
                 if (tests.length === 0) {
                     console.log('No tests found for this user');
-                    // We'll handle the empty state in the UI
+                    
+                    // Show a message in the UI
+                    const testsList = document.getElementById('tests-list');
+                    testsList.innerHTML = `
+                        <div class="alert alert-info">
+                            ${t.noTests}
+                        </div>
+                        <div class="alert alert-secondary">
+                            ${t.createTestInstructions || 'To create tests, use the main Telegram bot and they will appear here.'}
+                        </div>
+                    `;
                 }
                 
                 // Make sure we have valid test data

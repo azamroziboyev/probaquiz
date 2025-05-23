@@ -103,7 +103,8 @@ def get_user_tests(user_id):
             with open(path, 'r', encoding='utf-8') as f:
                 tests_data = json.load(f)
                 
-                # Check if user_id_str exists in the tests_data
+                # IMPORTANT: Only return tests that belong to this specific user
+                # This ensures each user only sees their own tests
                 if user_id_str in tests_data:
                     user_tests = tests_data.get(user_id_str, [])
                     print(f"Found {len(user_tests)} tests for user {user_id_str} at {path}")
@@ -112,6 +113,8 @@ def get_user_tests(user_id):
                     for i, test in enumerate(user_tests):
                         if 'id' not in test:
                             test['id'] = f"test_{i+1}"
+                        # Add owner ID to each test to ensure ownership is clear
+                        test['owner_id'] = user_id_str
                     
                     return user_tests
                 else:
@@ -119,26 +122,8 @@ def get_user_tests(user_id):
         except Exception as e:
             print(f"Failed to load from {path}: {e}")
     
-    # If all paths fail, only return sample tests for this specific user
-    try:
-        sample_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sample_tests.json')
-        print(f"Checking for user-specific sample tests from: {sample_path}")
-        with open(sample_path, 'r', encoding='utf-8') as f:
-            sample_data = json.load(f)
-            # Only get tests for this specific user, no fallback to admin
-            sample_tests = sample_data.get(user_id_str, [])
-            
-            # Add an ID to each test if it doesn't have one
-            for i, test in enumerate(sample_tests):
-                if 'id' not in test:
-                    test['id'] = f"sample_test_{i+1}"
-            
-            print(f"Loaded {len(sample_tests)} user-specific sample tests")
-            return sample_tests
-    except Exception as e:
-        print(f"Failed to load sample tests: {e}")
-        return []   # If everything fails, return an empty list
-    print("All attempts to load tests failed, returning empty list")
+    # If all paths fail, return an empty list - no tests for this user
+    print(f"No tests found for user {user_id_str} in any location")
     return []
 
 # Main route for the web app
