@@ -1386,9 +1386,28 @@
                         continue;
                     }
                     
-                    // Parse answers as integers for comparison
+                    // Parse user answer as integer
                     const userAnswerInt = parseInt(userAnswer);
-                    const correctAnswerInt = parseInt(question.correct_option);
+                    
+                    // Handle the correct_option field - it might be missing or in different formats
+                    let correctAnswerInt = 0; // Default to first option if not specified
+                    
+                    if (question.hasOwnProperty('correct_option')) {
+                        // Try to parse as integer
+                        try {
+                            correctAnswerInt = parseInt(question.correct_option);
+                            // If NaN, use default value 0
+                            if (isNaN(correctAnswerInt)) {
+                                console.warn(`Invalid correct_option for question ${i+1}, using default (0)`);
+                                correctAnswerInt = 0;
+                            }
+                        } catch (e) {
+                            console.warn(`Error parsing correct_option for question ${i+1}: ${e}`);
+                            correctAnswerInt = 0;
+                        }
+                    } else {
+                        console.warn(`Missing correct_option for question ${i+1}, using default (0)`);
+                    }
                     
                     console.log(`Question ${i+1}: User answer: ${userAnswerInt}, Correct: ${correctAnswerInt}`);
                     

@@ -115,10 +115,18 @@ def get_user_tests(user_id):
                             test['id'] = f"test_{i+1}"
                         # Add owner ID to each test to ensure ownership is clear
                         test['owner_id'] = user_id_str
+                        
+                        # Make sure each question has a correct_option field
+                        if 'questions' in test:
+                            for q_idx, question in enumerate(test['questions']):
+                                # If the question doesn't have a correct_option, assume the first option is correct
+                                if 'correct_option' not in question and 'options' in question and len(question['options']) > 0:
+                                    question['correct_option'] = 0
                     
                     return user_tests
                 else:
                     print(f"User ID {user_id_str} not found in {path}")
+                    # Continue to next path instead of returning empty list here
         except Exception as e:
             print(f"Failed to load from {path}: {e}")
     
@@ -316,7 +324,21 @@ def submit_test():
         if i < len(answers):
             try:
                 user_answer = int(answers[i]) if answers[i] is not None else None
-                correct_answer = int(question.get('correct_option')) if question.get('correct_option') is not None else None
+                
+                # Handle the correct_option field - it might be missing or in different formats
+                correct_answer = None
+                if 'correct_option' in question:
+                    # Try to convert to int
+                    try:
+                        correct_answer = int(question.get('correct_option'))
+                    except (ValueError, TypeError):
+                        # If conversion fails, assume the first option (index 0) is correct
+                        correct_answer = 0
+                        print(f"Warning: Invalid correct_option for question {i+1}, assuming first option is correct")
+                else:
+                    # If correct_option is missing, assume the first option (index 0) is correct
+                    correct_answer = 0
+                    print(f"Warning: Missing correct_option for question {i+1}, assuming first option is correct")
                 
                 print(f"Question {i+1}: User answered {user_answer}, correct is {correct_answer}")
                 
