@@ -926,17 +926,10 @@
                 tests = data.tests || [];
                 console.log(`Loaded ${tests.length} tests for user ${userId}`);
                 
-                // If no tests found, try with the default user ID as fallback
+                // Display a message if no tests are found
                 if (tests.length === 0) {
-                    console.log('No tests found, trying again with default user ID');
-                    const fallbackUrl = `/api/tests?user_id=1477944238`;
-                    const fallbackResponse = await fetch(fallbackUrl);
-                    const fallbackData = await fallbackResponse.json();
-                    
-                    if (fallbackData.success && fallbackData.tests && fallbackData.tests.length > 0) {
-                        tests = fallbackData.tests;
-                        console.log(`Loaded ${tests.length} fallback tests`);
-                    }
+                    console.log('No tests found for this user');
+                    // We'll handle the empty state in the UI
                 }
                 
                 // Make sure we have valid test data

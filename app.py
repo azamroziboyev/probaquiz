@@ -119,22 +119,21 @@ def get_user_tests(user_id):
         except Exception as e:
             print(f"Failed to load from {path}: {e}")
     
-    # If all paths fail, fall back to sample tests
+    # If all paths fail, only return sample tests for this specific user
     try:
         sample_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sample_tests.json')
-        print(f"Falling back to sample tests from: {sample_path}")
+        print(f"Checking for user-specific sample tests from: {sample_path}")
         with open(sample_path, 'r', encoding='utf-8') as f:
             sample_data = json.load(f)
+            # Only get tests for this specific user, no fallback to admin
             sample_tests = sample_data.get(user_id_str, [])
-            if not sample_tests and '1477944238' in sample_data:
-                sample_tests = sample_data['1477944238']
             
             # Add an ID to each test if it doesn't have one
             for i, test in enumerate(sample_tests):
                 if 'id' not in test:
                     test['id'] = f"sample_test_{i+1}"
             
-            print(f"Loaded {len(sample_tests)} sample tests")
+            print(f"Loaded {len(sample_tests)} user-specific sample tests")
             return sample_tests
     except Exception as e:
         print(f"Failed to load sample tests: {e}")
