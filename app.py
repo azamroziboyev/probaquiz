@@ -266,43 +266,59 @@ def submit_test():
             'message': 'Test not found'
         }), 404
     
-    # Get the local score calculation if available
-    local_score = data.get('local_score')
+    # Get the client-side score calculation if available
+    client_correct = data.get('correct')
+    client_total = data.get('total')
+    client_percentage = data.get('percentage')
     answer_results = data.get('answer_results', [])
     
     # Print debug information
     print(f"Received answers: {answers}")
-    print(f"Answer results: {answer_results}")
-    print(f"Local score: {local_score}")
+    print(f"Client-side score: {client_correct}/{client_total} ({client_percentage}%)")
     
-    # If we have a local score calculation, use that
-    if local_score and isinstance(local_score, dict):
-        correct_count = local_score.get('correct', 0)
-        total_questions = local_score.get('total', len(test.get('questions', [])))
-        percentage = local_score.get('percentage', 0)
-        
-        print(f"Using local score calculation: {correct_count}/{total_questions} ({percentage}%)")
-    else:
-        # Fall back to server-side calculation
-        correct_count = 0
-        total_questions = len(test.get('questions', []))
-        
-        # Check each answer
-        for i, question in enumerate(test.get('questions', [])):
-            if i < len(answers):
-                user_answer = answers[i]
-                correct_answer = question.get('correct_option')
+    # Server-side calculation for verification
+    server_correct_count = 0
+    server_total_questions = len(test.get('questions', []))
+    
+    # Check each answer on the server side
+    for i, question in enumerate(test.get('questions', [])):
+        if i < len(answers):
+            try:
+                user_answer = int(answers[i]) if answers[i] is not None else None
+                correct_answer = int(question.get('correct_option')) if question.get('correct_option') is not None else None
+                
                 print(f"Question {i+1}: User answered {user_answer}, correct is {correct_answer}")
                 
                 # Check if the answer is correct
-                if user_answer == correct_answer:
-                    correct_count += 1
+                if user_answer is not None and correct_answer is not None and user_answer == correct_answer:
+                    server_correct_count += 1
                     print(f"Question {i+1}: CORRECT")
                 else:
                     print(f"Question {i+1}: INCORRECT")
-        
-        print(f"Total correct: {correct_count} out of {total_questions}")
-        percentage = (correct_count / total_questions) * 100 if total_questions > 0 else 0
+            except (ValueError, TypeError) as e:
+                print(f"Error processing answer for question {i+1}: {e}")
+    
+    print(f"Server calculation: {server_correct_count} out of {server_total_questions}")
+    server_percentage = (server_correct_count / server_total_questions) * 100 if server_total_questions > 0 else 0
+    
+    # Choose the most reliable score (prefer server-side calculation)
+    if server_total_questions > 0:
+        correct_count = server_correct_count
+        total_questions = server_total_questions
+        percentage = server_percentage
+        print(f"Using server-side calculation: {correct_count}/{total_questions} ({percentage}%)")
+    elif client_correct is not None and client_total is not None:
+        # Fall back to client-side calculation if server calculation failed
+        correct_count = client_correct
+        total_questions = client_total
+        percentage = client_percentage if client_percentage is not None else (client_correct / client_total * 100 if client_total > 0 else 0)
+        print(f"Using client-side calculation: {correct_count}/{total_questions} ({percentage}%)")
+    else:
+        # Default values if all else fails
+        correct_count = 0
+        total_questions = 0
+        percentage = 0
+        print("Warning: Could not calculate score reliably")
     
     # Save results to the bot's database
     try:

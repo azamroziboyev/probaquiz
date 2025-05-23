@@ -1343,36 +1343,67 @@
                 console.log('Submitting test...');
                 stopTimer();
                 
+                // Disable navigation during submission
+                document.getElementById('quiz-submit-btn').disabled = true;
+                document.getElementById('quiz-submit-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+                
                 // Simple score calculation
                 let correctCount = 0;
                 const totalQuestions = currentTest.questions.length;
+                const answerResults = [];
                 
                 // Check each answer
                 for (let i = 0; i < currentTest.questions.length; i++) {
                     const question = currentTest.questions[i];
                     const userAnswer = userAnswers[i];
                     
-                    console.log(`Question ${i+1}: User answer: ${userAnswer}, Correct: ${question.correct_option}`);
-                    
                     // Skip questions that weren't answered
-                    if (userAnswer === undefined) continue;
+                    if (userAnswer === undefined || userAnswer === null) {
+                        answerResults.push({
+                            question_index: i,
+                            user_answer: null,
+                            correct_answer: parseInt(question.correct_option),
+                            is_correct: false
+                        });
+                        continue;
+                    }
+                    
+                    // Parse answers as integers for comparison
+                    const userAnswerInt = parseInt(userAnswer);
+                    const correctAnswerInt = parseInt(question.correct_option);
+                    
+                    console.log(`Question ${i+1}: User answer: ${userAnswerInt}, Correct: ${correctAnswerInt}`);
                     
                     // Check if the answer is correct
-                    if (parseInt(userAnswer) === parseInt(question.correct_option)) {
+                    const isCorrect = userAnswerInt === correctAnswerInt;
+                    if (isCorrect) {
                         correctCount++;
                     }
+                    
+                    // Store result for this question
+                    answerResults.push({
+                        question_index: i,
+                        user_answer: userAnswerInt,
+                        correct_answer: correctAnswerInt,
+                        is_correct: isCorrect
+                    });
                 }
                 
                 // Calculate percentage
-                const percentage = (correctCount / totalQuestions) * 100;
+                const percentage = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
                 console.log(`Score: ${correctCount}/${totalQuestions} (${percentage.toFixed(1)}%)`);
                 
-                // Show results directly
-                showResults({
+                // Calculate points (same as in the bot)
+                const points = Math.round(percentage);
+                
+                // Create score object
+                const scoreData = {
                     correct: correctCount,
                     total: totalQuestions,
-                    percentage: percentage
-                });
+                    percentage: percentage,
+                    points: points,
+                    answer_results: answerResults
+                };
                 
                 // Try to send results to server
                 try {
@@ -1390,20 +1421,49 @@
                             user_id: userId,
                             correct: correctCount,
                             total: totalQuestions,
-                            percentage: percentage
+                            percentage: percentage,
+                            answer_results: answerResults
                         })
                     })
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         console.log('Server response:', data);
+                        // Update score with server data if available
+                        if (data.success && data.score) {
+                            scoreData.correct = data.score.correct;
+                            scoreData.total = data.score.total;
+                            scoreData.percentage = data.score.percentage;
+                            scoreData.points = data.score.points;
+                            scoreData.saved_to_database = data.saved_to_database;
+                        }
+                        // Show results after server response
+                        showResults(scoreData);
                     })
-                    .catch(e => console.error('Server error:', e));
+                    .catch(e => {
+                        console.error('Server error:', e);
+                        // Show results anyway even if server failed
+                        showResults(scoreData);
+                    });
                 } catch (e) {
                     console.error('Failed to send results to server:', e);
+                    // Show results even if there was an error
+                    showResults(scoreData);
                 }
             } catch (error) {
                 console.error('Error submitting test:', error);
-                showScreen(document.getElementById('home-screen'));
+                // Enable submit button again
+                const submitBtn = document.getElementById('quiz-submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = translations[currentLanguage]?.submit || 'Submit';
+                }
+                // Show a simple alert with the error
+                alert('An error occurred while submitting your test. Please try again.');
             }
         }
 
@@ -1413,15 +1473,18 @@
                 console.log('Showing results:', score);
                 
                 // Update the score elements
-                document.getElementById('score').textContent = score.correct;
-                document.getElementById('max-score').textContent = score.total;
+                const scoreElement = document.getElementById('score');
+                const maxScoreElement = document.getElementById('max-score');
+                
+                if (scoreElement) scoreElement.textContent = score.correct;
+                if (maxScoreElement) maxScoreElement.textContent = score.total;
                 
                 // Get the translations for the current language
                 const t = translations[currentLanguage] || translations.en;
                 
                 // Calculate percentage (ensure it's a number)
                 const percentage = typeof score.percentage === 'number' ? score.percentage : 
-                                  (score.correct / score.total) * 100;
+                                  (score.total > 0 ? (score.correct / score.total) * 100 : 0);
                 
                 // Create a progress bar
                 const barLength = 10;
@@ -1508,7 +1571,7 @@
                     try {
                         const tg = window.Telegram.WebApp;
                         // Send the results back to the bot
-                        tg.sendData(JSON.stringify({
+                        const resultData = {
                             action: 'test_completed',
                             test_id: currentTest.id,
                             test_name: currentTest.name,
@@ -1516,10 +1579,25 @@
                             total: score.total,
                             percentage: percentage,
                             points: score.points || Math.round(percentage)
-                        }));
+                        };
+                        
+                        console.log('Sending data to Telegram:', resultData);
+                        tg.sendData(JSON.stringify(resultData));
                         console.log('Sent results to Telegram bot');
+                        
+                        // Notify user that results were sent
+                        const resultNotification = document.createElement('div');
+                        resultNotification.className = 'alert alert-success mt-3';
+                        resultNotification.innerHTML = '<i class="bi bi-check-circle-fill"></i> Results saved to your Telegram bot';
+                        document.querySelector('.results-container').appendChild(resultNotification);
                     } catch (e) {
                         console.error('Error sending results to Telegram:', e);
+                        
+                        // Show error notification
+                        const errorNotification = document.createElement('div');
+                        errorNotification.className = 'alert alert-danger mt-3';
+                        errorNotification.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Failed to send results to Telegram';
+                        document.querySelector('.results-container').appendChild(errorNotification);
                     }
                 }
             } catch (error) {
