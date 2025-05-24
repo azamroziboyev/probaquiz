@@ -32,13 +32,19 @@ def validate_telegram_webapp(init_data):
                 key, value = item.split('=', 1)
                 data_dict[key] = value
         
-        # For now, we'll simplify and just check if user data exists
+        # Check if user data exists
         if 'user' not in data_dict:
             return False, None
         
         # Get user data
         try:
             user_data = json.loads(urllib.parse.unquote(data_dict['user']))
+            
+            # Validate that user_id exists in the user data
+            if 'id' not in user_data:
+                print("User data missing required 'id' field")
+                return False, None
+                
             return True, user_data
         except Exception as e:
             print(f"Error parsing user data: {e}")
@@ -230,15 +236,12 @@ def get_tests():
         # Always sync tests first
         sync_user_tests_files()
         
-        # Get user_id from session or query parameter
+        # Get user_id from session
         user_id = session.get('user_id')
         
-        # For debugging, also accept a user_id query parameter
-        if not user_id and request.args.get('user_id'):
-            user_id = request.args.get('user_id')
-        
+        # Strict authentication check - only allow session-based authentication
         if not user_id:
-            print("No user_id found in session or query parameters")
+            print("No user_id found in session")
             return jsonify({
                 'success': False,
                 'message': 'User not authenticated'
@@ -261,6 +264,7 @@ def get_tests():
 # API endpoint to get a specific test
 @app.route('/api/tests/<test_id>', methods=['GET'])
 def get_test(test_id):
+    # Get user_id from session - strict authentication check
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({
@@ -327,17 +331,8 @@ def get_test(test_id):
 # API endpoint to submit test answers
 @app.route('/api/submit_test', methods=['POST'])
 def submit_test():
-    # Try to get user_id from session first
+    # Get user_id from session - strict authentication check
     user_id = session.get('user_id')
-    
-    # If not in session, try to get from query parameters or request body
-    if not user_id:
-        user_id = request.args.get('user_id') or (request.json and request.json.get('user_id'))
-        
-        # If we found a user_id, store it in the session for future requests
-        if user_id:
-            session['user_id'] = user_id
-            print(f"Using user_id from request: {user_id}")
     
     if not user_id:
         return jsonify({
@@ -362,6 +357,14 @@ def submit_test():
             'success': False,
             'message': 'Test not found'
         }), 404
+        
+    # Verify test ownership
+    if 'owner_id' in test and str(test['owner_id']) != str(user_id):
+        print(f"Ownership mismatch: Test owner {test['owner_id']} != User {user_id}")
+        return jsonify({
+            'success': False,
+            'message': 'Access denied: You do not own this test'
+        }), 403
     
     # Get the client-side score calculation if available
     client_correct = data.get('correct')

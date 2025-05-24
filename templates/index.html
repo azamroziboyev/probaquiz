@@ -900,7 +900,13 @@
         // Load user's tests
         async function loadTests() {
             try {
-                console.log('Loading tests for user:', currentUser?.id);
+                if (!currentUser || !currentUser.id) {
+                    console.error('No authenticated user found');
+                    showScreen('login-screen');
+                    return;
+                }
+                
+                console.log('Loading tests for user:', currentUser.id);
                 
                 // First, force a sync with the main bot's tests
                 console.log('Syncing tests with main bot...');
@@ -913,10 +919,9 @@
                     // Continue even if sync fails
                 }
                 
-                // Always include the user ID as a query parameter to ensure we get the right tests
-                // This is critical for the app to work correctly
-                const userId = currentUser?.id || 1477944238; // Use default ID if none available
-                const url = `/api/tests?user_id=${userId}`;
+                // Only use the session-based authentication
+                // No query parameters for security reasons
+                const url = '/api/tests';
                 console.log('Fetching tests from:', url);
                 
                 const response = await fetch(url);
@@ -1135,6 +1140,13 @@
             
             if (!currentTest) {
                 alert('Test not found');
+                return;
+            }
+            
+            // Verify the test belongs to the current user
+            if (currentTest.owner_id && currentTest.owner_id !== String(currentUser.id)) {
+                console.error(`Test with ID ${testId} does not belong to the current user`);
+                alert(t.testNotFound || 'Test not found');
                 return;
             }
             
@@ -1361,9 +1373,25 @@
                 console.log('Submitting test...');
                 stopTimer();
                 
+                // Verify user is authenticated
+                if (!currentUser || !currentUser.id) {
+                    console.error('No authenticated user found');
+                    alert(t.authError || 'Authentication error');
+                    showScreen('home-screen');
+                    return;
+                }
+                
+                // Verify the test belongs to the current user
+                if (currentTest.owner_id && currentTest.owner_id !== String(currentUser.id)) {
+                    console.error(`Test does not belong to the current user`);
+                    alert(t.testNotFound || 'Test not found');
+                    showScreen('home-screen');
+                    return;
+                }
+                
                 // Disable navigation during submission
                 document.getElementById('quiz-submit-btn').disabled = true;
-                document.getElementById('quiz-submit-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+                document.getElementById('quiz-submit-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...'
                 
                 // Simple score calculation
                 let correctCount = 0;
@@ -1444,10 +1472,10 @@
                 
                 // Try to send results to server
                 try {
-                    const userId = currentUser?.id || 1477944238;
+                    const userId = currentUser.id;
                     console.log(`Sending results to server for user ${userId}...`);
                     
-                    fetch(`/api/submit_test?user_id=${userId}`, {
+                    fetch('/api/submit_test', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1455,7 +1483,6 @@
                         body: JSON.stringify({
                             test_id: currentTest.id,
                             answers: userAnswers,
-                            user_id: userId,
                             correct: correctCount,
                             total: totalQuestions,
                             percentage: percentage,
